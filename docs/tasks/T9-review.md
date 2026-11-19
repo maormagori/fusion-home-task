@@ -2,6 +2,8 @@
 
 **When:** after T6 is merged (backend proven), in parallel with T8.
 
+**Agent:** Codex (`gpt-6.1-sol`, medium): a different model from the one that wrote most of the code, for a more independent view.
+
 **Goal:** an objective review by an agent that did not take part in building or planning this code. Find real
 problems: bugs, inconsistent state, inefficiencies, and weak architecture. **Challenge the design**, not just
 whether the code follows it. You change no code; you write a report.

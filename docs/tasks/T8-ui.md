@@ -6,7 +6,11 @@
 API contract from T4. The challenge says UI polish is not graded, so keep it minimal: one page, no routing library,
 no state-management library, no component library. Clarity and correctness over visuals.
 
-**Use the `ui-ux-pro-max` skill** (invoke it before writing UI code) to pick a simple, accessible style: palette,
+**Agent:** Claude Code (not Codex): it needs the `ui-ux-pro-max` skill and the Playwright MCP.
+
+**Use the `ui-ux-pro-max` skill** ([nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill),
+installed at `~/.claude/skills/ui-ux-pro-max`). Invoke it before writing UI code and run its search/recommendation scripts
+for this product type (internal admin / feedback dashboard, minimal style, React + plain CSS) to pick a simple, accessible style: palette,
 typography, spacing, status-badge colors, and light/dark support. Record what it recommended and what you kept in your ai-notes.
 
 ## Files you own
