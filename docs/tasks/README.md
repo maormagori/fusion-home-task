@@ -20,7 +20,7 @@ flowchart LR
 ```
 
 Agents are mixed to spread token use: Claude for T1–T5 and T8 (T8 needs the `ui-ux-pro-max` skill and Playwright MCP),
-Codex (`gpt-6.1-sol`, medium effort) for T6 and for follow-up fixes where possible. Codex reads `AGENTS.md`, which points to `CLAUDE.md`.
+Codex (`gpt-6.1-sol`, medium effort) for T6, T9 (review), and follow-up fixes where possible. Codex reads `AGENTS.md`, which points to `CLAUDE.md`.
 
 | Task | Brief | Depends on | Est. |
 |---|---|---|---|
