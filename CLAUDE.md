@@ -112,10 +112,10 @@ export type FeedbackDetail = z.infer<typeof feedbackDetailSchema>;
 export const analysisResultSchema = z.strictObject({
   sentiment: z.enum(['positive', 'neutral', 'negative']),
   feature_requests: z.array(z.strictObject({
-    title: z.string().min(1),
+    title: z.string().trim().min(1),
     confidence: z.number().min(0).max(1),
   })),
-  actionable_insight: z.string().min(1),
+  actionable_insight: z.string().trim().min(1),
 });
 export type AnalysisResult = z.infer<typeof analysisResultSchema>;
 ```
@@ -143,6 +143,10 @@ export function createFeedbackRepository(db: Database): FeedbackRepository;
 ```ts
 // analysis/llm-client.ts
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
+export class LlmCallError extends Error {
+  constructor(message: string, readonly retryable: boolean);
+}
+// complete() rejects with LlmCallError; the client owns provider-specific classification.
 export interface LlmClient { complete(messages: ChatMessage[]): Promise<string>; }
 export function createOpenAiLlmClient(config: Config): LlmClient;
 
@@ -154,10 +158,12 @@ export function buildCorrectionMessages(raw: string, error: string): ChatMessage
 export type AttemptOutcome =
   | { kind: 'success'; raw: string; result: AnalysisResult }
   | { kind: 'invalid_output'; raw: string; error: string }
-  | { kind: 'llm_error'; error: string };
+  | { kind: 'llm_error'; error: string; retryable: boolean };
 export function validateRawOutput(raw: string):
   { ok: true; result: AnalysisResult } | { ok: false; error: string };
 export function analyzeOnce(llm: LlmClient, messages: ChatMessage[]): Promise<AttemptOutcome>;
+// llm_error: retryable for connection/timeout errors, HTTP 408/409/429 and 5xx.
+// Other HTTP errors are permanent: persist the attempt and fail the run immediately.
 ```
 
 ```ts

@@ -219,7 +219,8 @@ describe('completeAnalysis', () => {
     repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING,
       { lastError: 'previous failure' });
 
-    const completion = repo.completeAnalysis({
+    const { completeAnalysis } = repo;
+    const completion = completeAnalysis({
       feedbackId, rawResponse: JSON.stringify(VALID_RESULT), result: VALID_RESULT,
     });
 
@@ -238,7 +239,8 @@ describe('completeAnalysis', () => {
     repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, status, { lastError: 'keep this error' });
     const before = repo.getDetail(feedbackId);
 
-    expect(repo.completeAnalysis({ feedbackId, rawResponse: 'raw', result: VALID_RESULT }))
+    const { completeAnalysis } = repo;
+    expect(completeAnalysis({ feedbackId, rawResponse: 'raw', result: VALID_RESULT }))
       .toEqual({ completed: false, attempt: null });
     expect(repo.getDetail(feedbackId)).toEqual(before);
   });

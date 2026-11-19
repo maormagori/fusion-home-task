@@ -83,6 +83,48 @@ export function createFeedbackRepository(db: Database): FeedbackRepository {
     return views;
   }
 
+  function transition(
+    id: string, from: FeedbackStatus, to: FeedbackStatus,
+    fields: { lastError?: string | null } = {},
+  ): boolean {
+    const updates: FeedbackUpdate = { status: to, updatedAt: currentTimestamp() };
+    if (fields.lastError !== undefined) {
+      updates.lastError = fields.lastError;
+    }
+    const updateResult = db
+      .update(feedback)
+      .set(updates)
+      .where(and(eq(feedback.id, id), eq(feedback.status, from)))
+      .run();
+    return updateResult.changes === 1;
+  }
+
+  function recordAttempt({ feedbackId, rawResponse, result, error }: {
+    feedbackId: string; rawResponse: string | null; result: AnalysisResult | null; error: string | null;
+  }): AnalysisAttempt {
+    // The max+1 read and the insert share a transaction so no other write can take the same number.
+    return db.transaction((tx) => {
+      const now = currentTimestamp();
+      const latest = tx
+        .select({ attemptNumber: max(analysisAttempts.attemptNumber) })
+        .from(analysisAttempts)
+        .where(eq(analysisAttempts.feedbackId, feedbackId))
+        .get();
+      const attemptNumber = (latest?.attemptNumber ?? 0) + 1;
+
+      const row = tx
+        .insert(analysisAttempts)
+        .values({
+          feedbackId, attemptNumber, rawResponse, error, createdAt: now,
+          resultJson: result ? JSON.stringify(result) : null,
+        })
+        .returning()
+        .get();
+      tx.update(feedback).set({ updatedAt: now }).where(eq(feedback.id, feedbackId)).run();
+      return toAttempt(row);
+    });
+  }
+
   return {
     insertOrGetExisting(content) {
       const now = currentTimestamp();
@@ -98,18 +140,7 @@ export function createFeedbackRepository(db: Database): FeedbackRepository {
       return { feedback: findByHash(contentHash), created: insertResult.changes === 1 };
     },
 
-    transition(id, from, to, fields = {}) {
-      const updates: FeedbackUpdate = { status: to, updatedAt: currentTimestamp() };
-      if (fields.lastError !== undefined) {
-        updates.lastError = fields.lastError;
-      }
-      const updateResult = db
-        .update(feedback)
-        .set(updates)
-        .where(and(eq(feedback.id, id), eq(feedback.status, from)))
-        .run();
-      return updateResult.changes === 1;
-    },
+    transition,
 
     findById(id) {
       const row = db.select().from(feedback).where(eq(feedback.id, id)).get();
@@ -135,38 +166,16 @@ export function createFeedbackRepository(db: Database): FeedbackRepository {
       return selectViews(where, limit, offset);
     },
 
-    recordAttempt({ feedbackId, rawResponse, result, error }) {
-      // The max+1 read and the insert share a transaction so no other write can take the same number.
-      return db.transaction((tx) => {
-        const now = currentTimestamp();
-        const latest = tx
-          .select({ attemptNumber: max(analysisAttempts.attemptNumber) })
-          .from(analysisAttempts)
-          .where(eq(analysisAttempts.feedbackId, feedbackId))
-          .get();
-        const attemptNumber = (latest?.attemptNumber ?? 0) + 1;
-
-        const row = tx
-          .insert(analysisAttempts)
-          .values({
-            feedbackId, attemptNumber, rawResponse, error, createdAt: now,
-            resultJson: result ? JSON.stringify(result) : null,
-          })
-          .returning()
-          .get();
-        tx.update(feedback).set({ updatedAt: now }).where(eq(feedback.id, feedbackId)).run();
-        return toAttempt(row);
-      });
-    },
+    recordAttempt,
 
     completeAnalysis(input) {
       return db.transaction(() => {
-        const completed = this.transition(input.feedbackId, feedbackStatusSchema.enum.ANALYZING,
+        const completed = transition(input.feedbackId, feedbackStatusSchema.enum.ANALYZING,
           feedbackStatusSchema.enum.DONE, { lastError: null });
         if (!completed) {
           return { attempt: null, completed: false };
         }
-        const attempt = this.recordAttempt({ ...input, error: null });
+        const attempt = recordAttempt({ ...input, error: null });
         return { attempt, completed: true };
       });
     },
