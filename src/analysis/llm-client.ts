@@ -32,8 +32,8 @@ export function createOpenAiLlmClient(config: Config): LlmClient {
         },
       });
       const content = completion.choices[0]?.message.content;
-      if (!content) {
-        throw new Error(`LLM returned an empty response (model ${config.LLM_MODEL})`);
+      if (content === null || content === undefined) {
+        throw new Error(`LLM returned no response content (model ${config.LLM_MODEL})`);
       }
       return content;
     },
