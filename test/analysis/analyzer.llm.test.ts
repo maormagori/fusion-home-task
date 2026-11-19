@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sentimentSchema } from '../../src/analysis/analysis.schema.js';
 import { analyzeOnce } from '../../src/analysis/analyzer.js';
 import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
 import { buildInitialMessages } from '../../src/analysis/prompt.js';
@@ -14,7 +15,7 @@ describe('analyzeOnce with the real local model', () => {
     if (outcome.kind !== 'success') {
       throw new Error(`Expected success, got ${outcome.kind}: ${outcome.error}`);
     }
-    expect(outcome.result.sentiment).toBe('negative');
+    expect(outcome.result.sentiment).toBe(sentimentSchema.enum.negative);
     expect(outcome.result.feature_requests.length).toBeGreaterThan(0);
   });
 });

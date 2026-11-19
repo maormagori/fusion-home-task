@@ -7,7 +7,7 @@ import * as schema from './schema.js';
 
 export type Database = BetterSQLite3Database<typeof schema>;
 
-const IN_MEMORY_PATH = ':memory:';
+export const IN_MEMORY_PATH = ':memory:';
 const MIGRATIONS_FOLDER = './drizzle';
 
 export function openDatabase(path: string): Database {

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { openDatabase } from '../../src/db/database.js';
+import { feedbackStatusSchema } from '../../src/domain/types.js';
+import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
 import { createFeedbackRepository, type FeedbackRepository } from '../../src/feedback/feedback.repository.js';
-import type { AnalysisResult } from '../../src/analysis/analysis.schema.js';
+import { sentimentSchema, type AnalysisResult } from '../../src/analysis/analysis.schema.js';
 
 const VALID_RESULT: AnalysisResult = {
-  sentiment: 'positive',
+  sentiment: sentimentSchema.enum.positive,
   feature_requests: [{ title: 'Dark mode', confidence: 0.9 }],
   actionable_insight: 'Ship a dark theme.',
 };
@@ -12,7 +13,7 @@ const VALID_RESULT: AnalysisResult = {
 let repo: FeedbackRepository;
 
 beforeEach(() => {
-  repo = createFeedbackRepository(openDatabase(':memory:'));
+  repo = createFeedbackRepository(openDatabase(IN_MEMORY_PATH));
 });
 
 function insertFeedback(content: string): string {
@@ -24,9 +25,9 @@ function recordFailedAttempt(feedbackId: string): void {
 }
 
 function markDone(feedbackId: string): void {
-  repo.transition(feedbackId, 'RECEIVED', 'ANALYZING');
+  repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING);
   repo.recordAttempt({ feedbackId, rawResponse: JSON.stringify(VALID_RESULT), result: VALID_RESULT, error: null });
-  repo.transition(feedbackId, 'ANALYZING', 'DONE', { lastError: null });
+  repo.transition(feedbackId, feedbackStatusSchema.enum.ANALYZING, feedbackStatusSchema.enum.DONE, { lastError: null });
 }
 
 describe('insertOrGetExisting', () => {
@@ -34,7 +35,7 @@ describe('insertOrGetExisting', () => {
     const { feedback, created } = repo.insertOrGetExisting('  Add  Dark Mode ');
 
     expect(created).toBe(true);
-    expect(feedback.status).toBe('RECEIVED');
+    expect(feedback.status).toBe(feedbackStatusSchema.enum.RECEIVED);
     expect(feedback.content).toBe('  Add  Dark Mode ');
     expect(feedback.lastError).toBeNull();
     expect(feedback.createdAt).toBe(feedback.updatedAt);
@@ -54,33 +55,33 @@ describe('transition', () => {
   it('changes the status when the current status matches', () => {
     const feedbackId = insertFeedback('hello');
 
-    expect(repo.transition(feedbackId, 'RECEIVED', 'ANALYZING')).toBe(true);
-    expect(repo.findById(feedbackId)?.status).toBe('ANALYZING');
+    expect(repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING)).toBe(true);
+    expect(repo.findById(feedbackId)?.status).toBe(feedbackStatusSchema.enum.ANALYZING);
   });
 
   it('returns false and leaves the row unchanged when the current status differs', () => {
     const feedbackId = insertFeedback('hello');
     const before = repo.findById(feedbackId);
 
-    expect(repo.transition(feedbackId, 'ANALYZING', 'DONE')).toBe(false);
+    expect(repo.transition(feedbackId, feedbackStatusSchema.enum.ANALYZING, feedbackStatusSchema.enum.DONE)).toBe(false);
     expect(repo.findById(feedbackId)).toEqual(before);
   });
 
   it('returns false for an unknown id', () => {
-    expect(repo.transition('missing-id', 'RECEIVED', 'ANALYZING')).toBe(false);
+    expect(repo.transition('missing-id', feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING)).toBe(false);
   });
 
   it('sets lastError, keeps it when not given, and clears it with null', () => {
     const feedbackId = insertFeedback('hello');
-    repo.transition(feedbackId, 'RECEIVED', 'ANALYZING');
-    repo.transition(feedbackId, 'ANALYZING', 'FAILED', { lastError: 'model timed out' });
+    repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING);
+    repo.transition(feedbackId, feedbackStatusSchema.enum.ANALYZING, feedbackStatusSchema.enum.FAILED, { lastError: 'model timed out' });
     expect(repo.findById(feedbackId)?.lastError).toBe('model timed out');
 
-    repo.transition(feedbackId, 'FAILED', 'RECEIVED');
+    repo.transition(feedbackId, feedbackStatusSchema.enum.FAILED, feedbackStatusSchema.enum.RECEIVED);
     expect(repo.findById(feedbackId)?.lastError).toBe('model timed out');
 
-    repo.transition(feedbackId, 'RECEIVED', 'ANALYZING');
-    repo.transition(feedbackId, 'ANALYZING', 'DONE', { lastError: null });
+    repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING);
+    repo.transition(feedbackId, feedbackStatusSchema.enum.ANALYZING, feedbackStatusSchema.enum.DONE, { lastError: null });
     expect(repo.findById(feedbackId)?.lastError).toBeNull();
   });
 });
@@ -151,8 +152,8 @@ describe('list', () => {
     const doneId = insertFeedback('done');
     markDone(doneId);
 
-    expect(repo.list({ status: 'DONE', limit: 10, offset: 0 }).map((item) => item.id)).toEqual([doneId]);
-    expect(repo.list({ status: 'RECEIVED', limit: 10, offset: 0 }).map((item) => item.id)).toEqual([receivedId]);
+    expect(repo.list({ status: feedbackStatusSchema.enum.DONE, limit: 10, offset: 0 }).map((item) => item.id)).toEqual([doneId]);
+    expect(repo.list({ status: feedbackStatusSchema.enum.RECEIVED, limit: 10, offset: 0 }).map((item) => item.id)).toEqual([receivedId]);
   });
 
   it('counts attempts and returns analysis only for DONE items', () => {
@@ -175,7 +176,7 @@ describe('list', () => {
     const feedbackId = insertFeedback('hello');
     markDone(feedbackId);
     // Only the status matters here, so this skips the state rules to reach a non-DONE item with a result.
-    repo.transition(feedbackId, 'DONE', 'RECEIVED');
+    repo.transition(feedbackId, feedbackStatusSchema.enum.DONE, feedbackStatusSchema.enum.RECEIVED);
 
     expect(repo.list({ limit: 10, offset: 0 })[0]?.analysis).toBeNull();
   });
@@ -185,14 +186,14 @@ describe('resetInterruptedAnalyses', () => {
   it('moves only ANALYZING items back to RECEIVED and returns the count', () => {
     const analyzingIds = [insertFeedback('a'), insertFeedback('b')];
     for (const feedbackId of analyzingIds) {
-      repo.transition(feedbackId, 'RECEIVED', 'ANALYZING');
+      repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING);
     }
     const doneId = insertFeedback('c');
     markDone(doneId);
 
     expect(repo.resetInterruptedAnalyses()).toBe(2);
-    expect(repo.listIdsByStatus('RECEIVED')).toEqual(analyzingIds);
-    expect(repo.findById(doneId)?.status).toBe('DONE');
+    expect(repo.listIdsByStatus(feedbackStatusSchema.enum.RECEIVED)).toEqual(analyzingIds);
+    expect(repo.findById(doneId)?.status).toBe(feedbackStatusSchema.enum.DONE);
   });
 });
 
@@ -203,7 +204,7 @@ describe('listIdsByStatus', () => {
     const lastId = insertFeedback('last');
     markDone(doneId);
 
-    expect(repo.listIdsByStatus('RECEIVED')).toEqual([firstId, lastId]);
-    expect(repo.listIdsByStatus('DONE')).toEqual([doneId]);
+    expect(repo.listIdsByStatus(feedbackStatusSchema.enum.RECEIVED)).toEqual([firstId, lastId]);
+    expect(repo.listIdsByStatus(feedbackStatusSchema.enum.DONE)).toEqual([doneId]);
   });
 });

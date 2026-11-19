@@ -230,6 +230,8 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - When a value has no source of truth yet but is used in 2+ places, create one (a named constant or schema) instead
   of repeating the literal.
 
+HTTP status codes: StatusCodes from http-status-codes. API paths: the constants and URL builders in src/api/feedback.schemas.ts.
+
 **Logging**
 - Use the injected `Logger` only. **No `console.*` anywhere** in `src/` (tests and scripts included unless printing is the point).
 - Structured fields, short message: `logger.info({ feedbackId, attemptNumber }, 'Analysis attempt failed')`.

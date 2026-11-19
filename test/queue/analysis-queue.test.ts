@@ -4,13 +4,14 @@ import { createLogger } from '../../src/logger.js';
 import { createAnalysisQueue } from '../../src/queue/analysis-queue.js';
 
 const JOB_DURATION_MS = 20;
+const CONCURRENCY = 2;
 
 describe('createAnalysisQueue', () => {
   it('never runs more jobs at once than its concurrency and completes all of them', async () => {
     let jobsInFlight = 0;
     let maxJobsInFlight = 0;
     const completedIds: string[] = [];
-    const queue = createAnalysisQueue(2, async (feedbackId) => {
+    const queue = createAnalysisQueue(CONCURRENCY, async (feedbackId) => {
       jobsInFlight++;
       maxJobsInFlight = Math.max(maxJobsInFlight, jobsInFlight);
       await delay(JOB_DURATION_MS);
@@ -23,7 +24,7 @@ describe('createAnalysisQueue', () => {
     }
     await queue.onIdle();
 
-    expect(maxJobsInFlight).toBe(2);
+    expect(maxJobsInFlight).toBe(CONCURRENCY);
     expect(completedIds.sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
   });
 
