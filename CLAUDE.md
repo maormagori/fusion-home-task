@@ -267,6 +267,7 @@ Each task writes `docs/ai-notes/T<n>.md`:
 
 ```markdown
 # T<n> — <title>
+Agent / model: <e.g. Claude Code, Opus 5.5 | Codex, gpt-6.1-sol medium>
 ## Prompts that mattered
 - "<prompt text>" → what it produced
 ## Where the AI was wrong / low quality and how it was corrected
