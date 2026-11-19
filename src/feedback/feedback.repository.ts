@@ -18,6 +18,8 @@ export interface FeedbackRepository {
   list(params: { status?: FeedbackStatus; limit: number; offset: number }): FeedbackView[];
   recordAttempt(input: { feedbackId: string; rawResponse: string | null;
                          result: AnalysisResult | null; error: string | null }): AnalysisAttempt;
+  completeAnalysis(input: { feedbackId: string; rawResponse: string; result: AnalysisResult }):
+    { attempt: AnalysisAttempt; completed: true } | { attempt: null; completed: false };
   resetInterruptedAnalyses(): number;
   listIdsByStatus(status: FeedbackStatus): string[];
 }
@@ -39,13 +41,13 @@ export function createFeedbackRepository(db: Database): FeedbackRepository {
   }
 
   function selectViews(where: SQL | undefined, limit: number, offset: number): FeedbackView[] {
-    // One aggregate per feedback avoids a query per row. A run ends on its first valid result,
-    // so each feedback has at most one non-null result_json and MAX() returns exactly that one.
     const attemptStats = db
       .select({
         feedbackId: analysisAttempts.feedbackId,
         attemptCount: count().as('attempt_count'),
-        resultJson: max(analysisAttempts.resultJson).as('result_json'),
+        latestValidAttempt: sql<number | null>`
+          max(${analysisAttempts.attemptNumber}) filter (where ${analysisAttempts.resultJson} is not null)
+        `.as('latest_valid_attempt'),
       })
       .from(analysisAttempts)
       .groupBy(analysisAttempts.feedbackId)
@@ -55,10 +57,14 @@ export function createFeedbackRepository(db: Database): FeedbackRepository {
       .select({
         feedback,
         attemptCount: sql<number>`coalesce(${attemptStats.attemptCount}, 0)`,
-        resultJson: attemptStats.resultJson,
+        resultJson: analysisAttempts.resultJson,
       })
       .from(feedback)
       .leftJoin(attemptStats, eq(attemptStats.feedbackId, feedback.id))
+      .leftJoin(analysisAttempts, and(
+        eq(analysisAttempts.feedbackId, feedback.id),
+        eq(analysisAttempts.attemptNumber, attemptStats.latestValidAttempt),
+      ))
       .where(where)
       .orderBy(desc(feedback.createdAt), desc(insertionOrder))
       .limit(limit)
@@ -150,6 +156,18 @@ export function createFeedbackRepository(db: Database): FeedbackRepository {
           .get();
         tx.update(feedback).set({ updatedAt: now }).where(eq(feedback.id, feedbackId)).run();
         return toAttempt(row);
+      });
+    },
+
+    completeAnalysis(input) {
+      return db.transaction(() => {
+        const completed = this.transition(input.feedbackId, feedbackStatusSchema.enum.ANALYZING,
+          feedbackStatusSchema.enum.DONE, { lastError: null });
+        if (!completed) {
+          return { attempt: null, completed: false };
+        }
+        const attempt = this.recordAttempt({ ...input, error: null });
+        return { attempt, completed: true };
       });
     },
 

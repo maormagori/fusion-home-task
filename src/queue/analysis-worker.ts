@@ -12,7 +12,7 @@ export interface AnalysisWorkerDeps {
   logger: Logger;
 }
 
-const { RECEIVED, ANALYZING, DONE, FAILED } = feedbackStatusSchema.enum;
+const { RECEIVED, ANALYZING, FAILED } = feedbackStatusSchema.enum;
 
 export async function processFeedback(feedbackId: string, deps: AnalysisWorkerDeps): Promise<void> {
   const { repo, logger } = deps;
@@ -44,13 +44,14 @@ async function analyzeClaimedFeedback(feedbackId: string, deps: AnalysisWorkerDe
   let latestError = '';
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const outcome = await analyzeOnce(llm, messages);
-    const { attemptNumber } = recordOutcome(repo, feedbackId, outcome);
-
     switch (outcome.kind) {
-      case 'success':
-        repo.transition(feedbackId, ANALYZING, DONE, { lastError: null });
-        logger.info({ feedbackId, attemptNumber }, 'Feedback analysis done');
+      case 'success': {
+        const completion = repo.completeAnalysis({ feedbackId, rawResponse: outcome.raw, result: outcome.result });
+        if (completion.completed) {
+          logger.info({ feedbackId, attemptNumber: completion.attempt.attemptNumber }, 'Feedback analysis done');
+        }
         return;
+      }
       case 'invalid_output':
         messages.push(...buildCorrectionMessages(outcome.raw, outcome.error));
         latestError = outcome.error;
@@ -61,6 +62,7 @@ async function analyzeClaimedFeedback(feedbackId: string, deps: AnalysisWorkerDe
         break;
     }
 
+    const { attemptNumber } = recordOutcome(repo, feedbackId, outcome);
     if (attempt < maxAttempts) {
       logger.warn({ feedbackId, attemptNumber, kind: outcome.kind, error: latestError }, 'Analysis attempt failed, retrying');
     }
@@ -70,10 +72,10 @@ async function analyzeClaimedFeedback(feedbackId: string, deps: AnalysisWorkerDe
   logger.info({ feedbackId, maxAttempts, lastError: latestError }, 'Feedback analysis failed after all attempts');
 }
 
-function recordOutcome(repo: FeedbackRepository, feedbackId: string, outcome: AttemptOutcome): AnalysisAttempt {
+function recordOutcome(
+  repo: FeedbackRepository, feedbackId: string, outcome: Exclude<AttemptOutcome, { kind: 'success' }>,
+): AnalysisAttempt {
   switch (outcome.kind) {
-    case 'success':
-      return repo.recordAttempt({ feedbackId, rawResponse: outcome.raw, result: outcome.result, error: null });
     case 'invalid_output':
       return repo.recordAttempt({ feedbackId, rawResponse: outcome.raw, result: null, error: outcome.error });
     case 'llm_error':

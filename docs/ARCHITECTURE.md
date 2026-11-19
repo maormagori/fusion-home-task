@@ -71,8 +71,8 @@ erDiagram
 ```
 
 - **Raw response** of every LLM call is persisted, valid or not — it is the evidence for failures.
-- **Validated result** is stored on the attempt that passed. A `DONE` item has exactly one attempt
-  with `result_json`, because success ends the run.
+- **Validated result** is stored on the attempt that passed. Reads use the valid attempt with the highest
+  `attempt_number`; older data may contain multiple valid attempts.
 
 ## 4. State machine
 
@@ -86,7 +86,7 @@ stateDiagram-v2
     ANALYZING --> RECEIVED: startup recovery (crash mid-analysis)
 ```
 
-- Every transition goes through one repository function:
+- Conditional transitions use the repository function:
   `transition(id, from, to, extra?)` → `UPDATE feedback SET status=:to, updated_at=now WHERE id=:id AND status=:from`.
   It returns whether a row changed. If not, the transition is rejected.
 - This makes the **claim** atomic: two queue jobs for the same id (double retry click, recovery +
@@ -129,16 +129,19 @@ flowchart TD
     Claim -- rejected --> Skip([exit: someone else owns it])
     Claim -- ok --> Call[LLM call with messages<br/>response_format = JSON schema]
     Call -- SDK error after its own retries<br/>timeout / network / 5xx / 429 --> RecErr[save attempt: error, raw=null]
-    Call -- got text --> RecRaw[save attempt: raw_response]
-    RecRaw --> Parse{JSON.parse +<br/>Zod strict validate}
-    Parse -- valid --> Done[save result_json<br/>transition ANALYZING→DONE]
-    Parse -- invalid --> Correct[append assistant reply +<br/>'previous answer invalid: zod errors,<br/>return corrected JSON']
+    Call -- got text, including empty string --> Parse{JSON.parse +<br/>Zod strict validate}
+    Parse -- valid --> Done[completeAnalysis: save successful attempt<br/>and ANALYZING→DONE in one transaction]
+    Parse -- invalid --> RecRaw[save invalid attempt: raw_response + error]
+    RecRaw --> Correct[append assistant reply +<br/>'previous answer invalid: zod errors,<br/>return corrected JSON']
     Correct --> More{attempts < MAX_ATTEMPTS?}
     RecErr --> More
     More -- yes --> Call
     More -- no --> Fail[transition ANALYZING→FAILED<br/>last_error = latest error]
 ```
 
+- A successful attempt and DONE are written in one transaction, clearing `lastError`. If the item is
+  no longer ANALYZING, `completeAnalysis()` stores nothing and returns `completed: false`.
+- Null response content or no choices is an LLM error; an empty string is invalid output and gets a correction.
 - **Two kinds of retry:**
   - *Transport errors* (timeout, connection, 5xx, 429) — retried inside the `openai` SDK (`maxRetries`, built-in
     backoff). If they still fail, it counts as one failed attempt and the loop retries with the same messages.
