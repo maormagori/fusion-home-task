@@ -257,6 +257,18 @@ Before committing, re-read your diff as a reviewer and simplify anything you had
   ```
   Then the rest of the description (what changed, test results).
 
+### Addressing review comments
+
+When the manager says the owner left comments on your PR:
+1. Read all of them: inline review comments with `gh api repos/{owner}/{repo}/pulls/<n>/comments` and general ones
+   with `gh pr view <n> --comments`.
+2. For each comment, either fix it or, if you disagree, reply with a short reason. Never ignore one silently.
+   If a comment asks for something outside your file list or changes a contract, ask the manager first.
+3. Push the fixes to the same branch (new commits, no force-push), reply under each comment with what changed
+   (`gh api …/pulls/<n>/comments/<id>/replies -f body=…` for inline comments, `gh pr comment <n>` for general ones),
+   update the TL;DR if the approach changed, and wait for green CI.
+4. Report with worker_done: one line per comment (fixed / replied, and how).
+
 ## AI notes (input for the README's AI Collaboration Log)
 
 Each task writes `docs/ai-notes/T<n>.md`:
