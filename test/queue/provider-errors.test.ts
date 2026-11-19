@@ -3,7 +3,7 @@ import { once } from 'node:events';
 import { StatusCodes } from 'http-status-codes';
 import { afterEach, describe, expect, it } from 'vitest';
 import { sentimentSchema } from '../../src/analysis/analysis.schema.js';
-import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
+import { createOpenAiLlmClient, LlmCallError } from '../../src/analysis/llm-client.js';
 import { buildCorrectionMessages, buildInitialMessages } from '../../src/analysis/prompt.js';
 import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
 import { feedbackStatusSchema } from '../../src/domain/types.js';
@@ -30,6 +30,18 @@ afterEach(async () => {
 });
 
 describe('provider errors through the real SDK', () => {
+  it.each([
+    { status: StatusCodes.NOT_FOUND, retryable: false },
+    { status: StatusCodes.INTERNAL_SERVER_ERROR, retryable: true },
+  ])('wraps HTTP $status as LlmCallError with retryable=$retryable', async ({ status, retryable }) => {
+    const { llm } = await setup(() => providerError(status));
+
+    const completion = llm.complete(buildInitialMessages('The app crashes.'));
+
+    await expect(completion).rejects.toBeInstanceOf(LlmCallError);
+    await expect(completion).rejects.toMatchObject({ retryable, message: expect.stringContaining(String(status)) });
+  });
+
   it.each([
     StatusCodes.BAD_REQUEST, StatusCodes.UNAUTHORIZED, StatusCodes.FORBIDDEN,
     StatusCodes.NOT_FOUND, StatusCodes.UNPROCESSABLE_ENTITY,
@@ -112,7 +124,7 @@ async function setup(replyForRequest: (index: number) => Reply) {
   const repo = createFeedbackRepository(openDatabase(IN_MEMORY_PATH));
   const feedbackId = repo.insertOrGetExisting('The app crashes.').feedback.id;
   const llm = createOpenAiLlmClient(config);
-  return { repo, feedbackId, requests, config,
+  return { repo, feedbackId, requests, config, llm,
     run: () => processFeedback(feedbackId, { repo, llm, maxAttempts: config.MAX_ATTEMPTS, logger }),
   };
 }

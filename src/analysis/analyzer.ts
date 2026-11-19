@@ -1,8 +1,6 @@
-import OpenAI from 'openai';
-import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 import { analysisResultSchema, type AnalysisResult } from './analysis.schema.js';
-import type { ChatMessage, LlmClient } from './llm-client.js';
+import { LlmCallError, type ChatMessage, type LlmClient } from './llm-client.js';
 
 export type AttemptOutcome =
   | { kind: 'success'; raw: string; result: AnalysisResult }
@@ -14,7 +12,8 @@ export async function analyzeOnce(llm: LlmClient, messages: ChatMessage[]): Prom
   try {
     raw = await llm.complete(messages);
   } catch (error) {
-    return { kind: 'llm_error', error: errorMessage(error), retryable: isRetryable(error) };
+    const retryable = error instanceof LlmCallError ? error.retryable : true;
+    return { kind: 'llm_error', error: errorMessage(error), retryable };
   }
 
   const validation = validateRawOutput(raw);
@@ -44,14 +43,4 @@ export function validateRawOutput(raw: string):
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function isRetryable(error: unknown): boolean {
-  if (!(error instanceof OpenAI.APIError) || error.status === undefined) {
-    return true;
-  }
-  return error.status === StatusCodes.REQUEST_TIMEOUT
-    || error.status === StatusCodes.CONFLICT
-    || error.status === StatusCodes.TOO_MANY_REQUESTS
-    || error.status >= StatusCodes.INTERNAL_SERVER_ERROR;
 }

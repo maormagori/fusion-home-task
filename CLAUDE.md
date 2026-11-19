@@ -137,6 +137,10 @@ export function createFeedbackRepository(db: Database): FeedbackRepository;
 ```ts
 // analysis/llm-client.ts
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
+export class LlmCallError extends Error {
+  constructor(message: string, readonly retryable: boolean);
+}
+// complete() rejects with LlmCallError; the client owns provider-specific classification.
 export interface LlmClient { complete(messages: ChatMessage[]): Promise<string>; }
 export function createOpenAiLlmClient(config: Config): LlmClient;
 
