@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { sentimentSchema } from '../../src/analysis/analysis.schema.js';
 import { analyzeOnce, validateRawOutput } from '../../src/analysis/analyzer.js';
 import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
 import { buildInitialMessages } from '../../src/analysis/prompt.js';
 import { createUnreachableLlmTestConfig } from '../helpers/test-config.js';
 
 const validResult = {
-  sentiment: 'negative',
+  sentiment: sentimentSchema.enum.negative,
   feature_requests: [{ title: 'Offline mode', confidence: 0.9 }],
   actionable_insight: 'Fix the crash on startup.',
 };

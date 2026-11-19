@@ -1,6 +1,18 @@
 import { z } from 'zod';
 import { feedbackStatusSchema, feedbackViewSchema } from '../domain/types.js';
 
+export const FEEDBACK_PATH = '/feedback';
+export const FEEDBACK_DETAIL_PATH = `${FEEDBACK_PATH}/:id`;
+export const FEEDBACK_RETRY_PATH = `${FEEDBACK_DETAIL_PATH}/retry`;
+
+export function feedbackDetailUrl(id: string): string {
+  return FEEDBACK_DETAIL_PATH.replace(':id', encodeURIComponent(id));
+}
+
+export function feedbackRetryUrl(id: string): string {
+  return FEEDBACK_RETRY_PATH.replace(':id', encodeURIComponent(id));
+}
+
 export const DEFAULT_LIST_LIMIT = 20;
 export const MAX_LIST_LIMIT = 100;
 

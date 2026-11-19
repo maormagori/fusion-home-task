@@ -217,6 +217,8 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - No file-header comments, no comments restating a function or variable name, no JSDoc on obvious functions.
 - No commented-out code, no TODOs without a note in your ai-notes.
 
+HTTP status codes: StatusCodes from http-status-codes. API paths: the constants and URL builders in src/api/feedback.schemas.ts.
+
 **Logging**
 - Use the injected `Logger` only. **No `console.*` anywhere** in `src/` (tests and scripts included unless printing is the point).
 - Structured fields, short message: `logger.info({ feedbackId, attemptNumber }, 'Analysis attempt failed')`.

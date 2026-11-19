@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildCorrectionMessages, buildInitialMessages } from '../../src/analysis/prompt.js';
+import {
+  buildCorrectionMessages,
+  buildInitialMessages,
+  CORRECTION_INSTRUCTION,
+  FEEDBACK_START,
+  FEEDBACK_END,
+} from '../../src/analysis/prompt.js';
 
 describe('buildInitialMessages', () => {
   it('returns a system message and a user message with the feedback inside the delimiters', () => {
@@ -7,7 +13,7 @@ describe('buildInitialMessages', () => {
     const messages = buildInitialMessages(feedback);
 
     expect(messages.map((message) => message.role)).toEqual(['system', 'user']);
-    expect(messages[1]?.content).toBe(`<<<FEEDBACK>>>\n${feedback}\n<<<END FEEDBACK>>>`);
+    expect(messages[1]?.content).toBe(`${FEEDBACK_START}\n${feedback}\n${FEEDBACK_END}`);
   });
 
   it('tells the model to ignore instructions inside the feedback and to answer with JSON only', () => {
@@ -28,6 +34,6 @@ describe('buildCorrectionMessages', () => {
     expect(messages[0]).toEqual({ role: 'assistant', content: raw });
     expect(messages[1]?.role).toBe('user');
     expect(messages[1]?.content).toContain(error);
-    expect(messages[1]?.content).toContain('Return only corrected JSON');
+    expect(messages[1]?.content).toContain(CORRECTION_INSTRUCTION);
   });
 });
