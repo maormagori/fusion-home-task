@@ -1,7 +1,7 @@
 # Task plan
 
 Integration branch: `home-task-orchestration-plan`. Each task runs as a separate Orca worker on
-its own branch `task/T<n>-<name>`; the manager reviews and merges into the integration branch.
+its own branch `task/T<n>-<name>`; the manager reviews each PR and the owner merges it into the integration branch.
 
 ```mermaid
 flowchart LR
@@ -38,5 +38,5 @@ Done means: `npm run typecheck` and `npm test` pass locally (plus `npm run test:
 | LLM tests | locally, `npm run test:llm` (never in CI: no Ollama on runners) | prompts and schema work with the real model |
 | End-to-end | T6 | the whole flow, including failure → DLQ → retry and restart recovery |
 
-The manager merges only green PRs, and runs `npm run test:llm` on the integration branch after merging T3, T5, and T6.
+Only green PRs are merged, and only by the owner. The manager reviews each PR first, and runs `npm run test:llm` on the integration branch after T3, T5, and T6 are merged.
 "Done when … committed on `task/…`" in a brief also means the PR above is open and green.

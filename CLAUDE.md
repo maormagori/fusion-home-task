@@ -9,7 +9,7 @@ analyzes it asynchronously with an LLM into strict, validated JSON.
 
 ## How work is organized
 
-A **manager** session holds the plan, writes one brief per task, reviews and merges.
+A **manager** session holds the plan, writes one brief per task, and reviews each PR. The **owner** (a human) merges.
 Each **task worker** runs in its own Orca worktree with a fresh context and:
 
 1. Reads this file, `docs/ARCHITECTURE.md`, and its own brief. Nothing else is required.
@@ -19,7 +19,7 @@ Each **task worker** runs in its own Orca worktree with a fresh context and:
 5. Follows **Code style** below. The manager rejects code that is correct but hard to read.
 6. Writes `docs/ai-notes/T<n>.md` (format below), including the walkthrough section.
 7. Commits on its own branch, pushes it, opens a PR into the integration branch, and waits for CI
-   to be green (see **Git**). Fixes red CI itself. Does not merge — the manager merges.
+   to be green (see **Git**). Fixes red CI itself. Does not merge — the owner merges.
 
 ## Commands
 
@@ -250,7 +250,7 @@ Before committing, re-read your diff as a reviewer and simplify anything you had
   ```
 - CI (`.github/workflows/ci.yml`) runs typecheck + `npm test` on the PR merged with its base, so it checks that your
   task works **together with** everything already merged. LLM tests are not in CI; run `npm run test:llm` locally.
-- Do not merge your PR. The manager reviews and merges it.
+- Do not merge your PR. The manager reviews it; the owner merges it.
 
 ## AI notes (input for the README's AI Collaboration Log)
 
