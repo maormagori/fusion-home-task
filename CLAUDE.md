@@ -91,6 +91,12 @@ export type Feedback = z.infer<typeof feedbackSchema>;
 export type AnalysisAttempt = z.infer<typeof analysisAttemptSchema>;
 export type FeedbackView = z.infer<typeof feedbackViewSchema>;
 export type FeedbackDetail = z.infer<typeof feedbackDetailSchema>;
+
+// Field meaning (not expressible in the schema):
+// id: uuid · createdAt/updatedAt: ISO 8601
+// attemptNumber: 1, 2, 3… across the item's whole lifetime (keeps counting after a manual retry)
+// rawResponse: null only when the LLM call itself failed · result: set only when validation passed
+// analysis: non-null only when status === 'DONE' · attempts: ordered by attemptNumber
 ```
 
 ```ts
@@ -156,7 +162,7 @@ export function processFeedback(feedbackId: string,
 
 // api/app.ts
 export function buildApp(deps: { repo: FeedbackRepository; enqueue: (id: string) => void;
-                                  maxContentLength: number }): FastifyInstance;
+                                  maxContentLength: number; logLevel: Config['LOG_LEVEL'] }): FastifyInstance;
 ```
 
 ## State rules (do not break these)
