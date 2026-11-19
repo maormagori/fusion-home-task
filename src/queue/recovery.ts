@@ -1,4 +1,4 @@
-import { feedbackStatusSchema } from '../domain/types.js';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import type { FeedbackRepository } from '../feedback/feedback.repository.js';
 import type { Logger } from '../logger.js';
 import type { AnalysisQueue } from './analysis-queue.js';

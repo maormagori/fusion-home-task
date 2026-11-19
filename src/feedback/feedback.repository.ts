@@ -2,11 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, count, desc, eq, max, sql, type SQL } from 'drizzle-orm';
 import type { Database } from '../db/database.js';
 import { analysisAttempts, feedback } from '../db/schema.js';
-import type { AnalysisResult } from '../analysis/analysis.schema.js';
+import type { AnalysisResult } from '@feedback/shared/analysis';
 import type {
   AnalysisAttempt, Feedback, FeedbackDetail, FeedbackStatus, FeedbackView,
-} from '../domain/types.js';
-import { feedbackStatusSchema } from '../domain/types.js';
+} from '@feedback/shared/models';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import { hashContent } from './content-hash.js';
 
 export interface FeedbackRepository {

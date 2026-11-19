@@ -1,12 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 import { expect } from 'vitest';
-import { analysisResultSchema } from '../../src/analysis/analysis.schema.js';
+import { analysisResultSchema } from '@feedback/shared/analysis';
 import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
 import { buildApp } from '../../src/api/app.js';
-import { FEEDBACK_PATH, feedbackDetailUrl, submitFeedbackResponseSchema } from '../../src/api/feedback.schemas.js';
+import { FEEDBACK_PATH, feedbackDetailUrl, submitFeedbackResponseSchema } from '@feedback/shared/api';
 import type { Config } from '../../src/config.js';
 import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
-import { feedbackDetailSchema, feedbackStatusSchema, type FeedbackDetail } from '../../src/domain/types.js';
+import { feedbackDetailSchema, feedbackStatusSchema, type FeedbackDetail } from '@feedback/shared/models';
 import { createFeedbackRepository } from '../../src/feedback/feedback.repository.js';
 import { createLogger } from '../../src/logger.js';
 import { createAnalysisQueue } from '../../src/queue/analysis-queue.js';

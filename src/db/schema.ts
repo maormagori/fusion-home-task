@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { FEEDBACK_STATUSES } from '../domain/types.js';
+import { FEEDBACK_STATUSES } from '@feedback/shared/models';
 
 // Built from FEEDBACK_STATUSES so the CHECK constraint and the TypeScript type cannot drift apart.
 const allowedStatusesSql = sql.raw(FEEDBACK_STATUSES.map((status) => `'${status}'`).join(', '));

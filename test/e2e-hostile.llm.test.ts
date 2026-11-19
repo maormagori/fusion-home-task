@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { FEEDBACK_END } from '../src/analysis/prompt.js';
-import { feedbackStatusSchema } from '../src/domain/types.js';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import { createRealWorkflow, expectSettled, waitForIdle, type WorkflowHarness } from './helpers/workflow-harness.js';
 
 let workflow: WorkflowHarness;

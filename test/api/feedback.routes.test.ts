@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { analysisResultSchema, sentimentSchema, type AnalysisResult } from '../../src/analysis/analysis.schema.js';
+import { analysisResultSchema, sentimentSchema, type AnalysisResult } from '@feedback/shared/analysis';
 import { buildApp } from '../../src/api/app.js';
 import { FEEDBACK_NOT_FOUND, ONLY_FAILED_CAN_BE_RETRIED } from '../../src/api/feedback.routes.js';
 import {
@@ -15,8 +15,8 @@ import {
   retryConflictResponseSchema,
   retryFeedbackResponseSchema,
   submitFeedbackResponseSchema,
-} from '../../src/api/feedback.schemas.js';
-import { feedbackDetailSchema, feedbackStatusSchema } from '../../src/domain/types.js';
+} from '@feedback/shared/api';
+import { feedbackDetailSchema, feedbackStatusSchema } from '@feedback/shared/models';
 import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
 import { createFeedbackRepository, type FeedbackRepository } from '../../src/feedback/feedback.repository.js';
 import { createLogger } from '../../src/logger.js';

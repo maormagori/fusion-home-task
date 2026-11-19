@@ -20,6 +20,11 @@ extracts structured insights (sentiment, feature requests, actionable insight) u
 
 ```mermaid
 flowchart LR
+    Web[web/ React UI] -->|HTTP| API
+    Web --> Shared[packages/shared/ @feedback/shared<br/>models, analysis, api schemas]
+    API --> Shared
+    Analyzer --> Shared
+    Repo --> Shared
     Client -->|HTTP| API[api/ Fastify routes]
     API --> Repo[feedback/ repository]
     API -->|enqueue id| Queue[queue/ AnalysisQueue<br/>p-queue, concurrency N]
@@ -34,12 +39,13 @@ flowchart LR
 | Module | Responsibility | Knows about |
 |---|---|---|
 | `config.ts` | Read and validate env vars once | — |
-| `domain/types.ts` | Shared types: `FeedbackStatus`, `Feedback`, `AnalysisAttempt`, `AnalysisResult` | — |
+| `packages/shared/src/` | `@feedback/shared/models`, `/analysis`, `/api`: Zod models, inferred types, API schemas and paths | zod only |
+| `web/` | React UI; imports shared contracts through `web/src/models.ts` | @feedback/shared |
 | `db/` | Drizzle schema, connection, run migrations | — |
-| `feedback/` | Repository: dedup insert, **conditional status transitions**, reads, attempt records | db, domain |
-| `analysis/` | Zod output schema, prompt builder, LLM client, `analyzeOnce()` → typed outcome | domain |
+| `feedback/` | Repository: dedup insert, **conditional status transitions**, reads, attempt records | db, @feedback/shared |
+| `analysis/` | Prompt builder, LLM client, `analyzeOnce()` → typed outcome | @feedback/shared |
 | `queue/` | `AnalysisQueue` (p-queue wrapper) and `processFeedback()` worker (retry loop, state changes) | feedback, analysis |
-| `api/` | Fastify routes, `buildApp(deps)`, request + response Zod schemas (the API contract, importable by a future UI) | feedback, queue (only `enqueue`) |
+| `api/` | Fastify routes, `buildApp(deps)`, shared request + response validation | @feedback/shared, feedback, queue (only `enqueue`) |
 | `server.ts` | Wiring, startup recovery, listen | everything |
 
 Rule: `analysis/` never touches the DB; `api/` never calls the LLM. The worker is the only place that
@@ -146,7 +152,7 @@ flowchart TD
   - *Transport errors* (timeout, connection, 5xx, 429) — retried inside the `openai` SDK (`maxRetries`, built-in
     backoff). If they still fail, it counts as one failed attempt and the loop retries with the same messages.
   - *Invalid output* — the model's reply and the validation errors are sent back so it can correct itself.
-- **Validation** (`analysis.schema.ts`): `sentiment ∈ {positive, neutral, negative}`,
+- **Validation** (`packages/shared/src/analysis.ts`): `sentiment ∈ {positive, neutral, negative}`,
   `feature_requests: {title: non-empty string, confidence: 0..1}[]` (may be empty),
   `actionable_insight: non-empty string`, extra keys rejected (`.strict()`).
   Structured output from the model makes valid JSON likely; Zod is still the source of truth.

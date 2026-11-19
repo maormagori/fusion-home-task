@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sentimentSchema } from '../../src/analysis/analysis.schema.js';
+import { sentimentSchema } from '@feedback/shared/analysis';
 import { analyzeOnce } from '../../src/analysis/analyzer.js';
 import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
 import { buildInitialMessages } from '../../src/analysis/prompt.js';

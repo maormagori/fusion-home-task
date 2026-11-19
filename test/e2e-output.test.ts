@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildCorrectionMessages, buildInitialMessages } from '../src/analysis/prompt.js';
-import { feedbackStatusSchema } from '../src/domain/types.js';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import { createScriptedWorkflow, VALID_ANALYSIS, VALID_RAW, type ScriptedWorkflow } from './helpers/scripted-workflow.js';
 import { expectSettled, waitForIdle } from './helpers/workflow-harness.js';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analysisResultSchema, sentimentSchema } from '../../src/analysis/analysis.schema.js';
+import { analysisResultSchema, sentimentSchema } from '@feedback/shared/analysis';
 
 const validSample = {
   sentiment: sentimentSchema.enum.negative,

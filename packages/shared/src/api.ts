@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { feedbackStatusSchema, feedbackViewSchema } from '../domain/types.js';
+import { feedbackStatusSchema, feedbackViewSchema } from '@feedback/shared/models';
 
 export const FEEDBACK_PATH = '/feedback';
 export const FEEDBACK_DETAIL_PATH = `${FEEDBACK_PATH}/:id`;

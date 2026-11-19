@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { sentimentSchema } from '../../src/analysis/analysis.schema.js';
+import { sentimentSchema } from '@feedback/shared/analysis';
 import { analyzeOnce, validateRawOutput } from '../../src/analysis/analyzer.js';
 import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
 import { buildInitialMessages } from '../../src/analysis/prompt.js';

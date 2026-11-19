@@ -1,8 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createOpenAiLlmClient } from '../src/analysis/llm-client.js';
-import { FEEDBACK_PATH, feedbackRetryUrl, submitFeedbackResponseSchema } from '../src/api/feedback.schemas.js';
-import { feedbackStatusSchema } from '../src/domain/types.js';
+import { FEEDBACK_PATH, feedbackRetryUrl, submitFeedbackResponseSchema } from '@feedback/shared/api';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import { processFeedback } from '../src/queue/analysis-worker.js';
 import { recoverPendingAnalyses } from '../src/queue/recovery.js';
 import { createUnreachableLlmTestConfig } from './helpers/test-config.js';

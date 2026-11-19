@@ -1,4 +1,4 @@
-import { analysisResultSchema, sentimentSchema } from '../../src/analysis/analysis.schema.js';
+import { analysisResultSchema, sentimentSchema } from '@feedback/shared/analysis';
 import { createScriptedLlmServer, type ScriptedLlmServer, type ScriptedReply } from './scripted-llm-server.js';
 import { createTestConfig } from './test-config.js';
 import { createWorkflowHarness, type WorkflowHarness } from './workflow-harness.js';
