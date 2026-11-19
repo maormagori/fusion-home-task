@@ -1,5 +1,7 @@
 # T8 — Minimal UI
 
+**When:** only after T6 is merged, so the UI is built on a backend already proven end to end.
+
 **Goal:** a small, clean web page to submit feedback and watch it move through the state machine, built on the
 API contract from T4. The challenge says UI polish is not graded, so keep it minimal: one page, no routing library,
 no state-management library, no component library. Clarity and correctness over visuals.
