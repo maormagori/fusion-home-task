@@ -6,6 +6,7 @@ import type { AnalysisResult } from '../analysis/analysis.schema.js';
 import type {
   AnalysisAttempt, Feedback, FeedbackDetail, FeedbackStatus, FeedbackView,
 } from '../domain/types.js';
+import { feedbackStatusSchema } from '../domain/types.js';
 import { hashContent } from './content-hash.js';
 
 export interface FeedbackRepository {
@@ -66,7 +67,7 @@ export function createFeedbackRepository(db: Database): FeedbackRepository {
 
     const views: FeedbackView[] = [];
     for (const row of rows) {
-      const isDone = row.feedback.status === 'DONE';
+      const isDone = row.feedback.status === feedbackStatusSchema.enum.DONE;
       views.push({
         ...toFeedback(row.feedback),
         attemptCount: row.attemptCount,
@@ -83,7 +84,7 @@ export function createFeedbackRepository(db: Database): FeedbackRepository {
       const insertResult = db
         .insert(feedback)
         .values({
-          id: randomUUID(), content, contentHash, status: 'RECEIVED',
+          id: randomUUID(), content, contentHash, status: feedbackStatusSchema.enum.RECEIVED,
           lastError: null, createdAt: now, updatedAt: now,
         })
         .onConflictDoNothing({ target: feedback.contentHash })
@@ -155,8 +156,8 @@ export function createFeedbackRepository(db: Database): FeedbackRepository {
     resetInterruptedAnalyses() {
       const updateResult = db
         .update(feedback)
-        .set({ status: 'RECEIVED', updatedAt: currentTimestamp() })
-        .where(eq(feedback.status, 'ANALYZING'))
+        .set({ status: feedbackStatusSchema.enum.RECEIVED, updatedAt: currentTimestamp() })
+        .where(eq(feedback.status, feedbackStatusSchema.enum.ANALYZING))
         .run();
       return updateResult.changes;
     },

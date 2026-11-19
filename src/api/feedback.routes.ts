@@ -1,5 +1,5 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { feedbackDetailSchema } from '../domain/types.js';
+import { feedbackDetailSchema, feedbackStatusSchema } from '../domain/types.js';
 import type { FeedbackRepository } from '../feedback/feedback.repository.js';
 import {
   createSubmitFeedbackBodySchema,
@@ -87,11 +87,11 @@ export const feedbackRoutes: FastifyPluginAsyncZod<FeedbackRoutesOptions> = asyn
     if (!feedback) {
       return reply.code(404).send({ error: FEEDBACK_NOT_FOUND });
     }
-    const wasRetried = repo.transition(feedbackId, 'FAILED', 'RECEIVED');
+    const wasRetried = repo.transition(feedbackId, feedbackStatusSchema.enum.FAILED, feedbackStatusSchema.enum.RECEIVED);
     if (!wasRetried) {
       return reply.code(409).send({ error: ONLY_FAILED_CAN_BE_RETRIED, status: feedback.status });
     }
     enqueue(feedbackId);
-    return reply.code(202).send({ id: feedbackId, status: 'RECEIVED' });
+    return reply.code(202).send({ id: feedbackId, status: feedbackStatusSchema.enum.RECEIVED });
   });
 };
