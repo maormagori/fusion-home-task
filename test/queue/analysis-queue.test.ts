@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { setTimeout as delay } from 'node:timers/promises';
+import { createLogger } from '../../src/logger.js';
 import { createAnalysisQueue } from '../../src/queue/analysis-queue.js';
 
 const JOB_DURATION_MS = 20;
@@ -15,7 +16,7 @@ describe('createAnalysisQueue', () => {
       await delay(JOB_DURATION_MS);
       jobsInFlight--;
       completedIds.push(feedbackId);
-    });
+    }, createLogger('silent'));
 
     for (const feedbackId of ['a', 'b', 'c', 'd', 'e']) {
       queue.enqueue(feedbackId);
@@ -26,15 +27,16 @@ describe('createAnalysisQueue', () => {
     expect(completedIds.sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
   });
 
-  it('logs a throwing job and keeps running the others', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('logs a throwing job at error level and keeps running the others', async () => {
+    const logger = createLogger('silent');
+    const logError = vi.spyOn(logger, 'error');
     const completedIds: string[] = [];
     const queue = createAnalysisQueue(1, async (feedbackId) => {
       if (feedbackId === 'broken') {
         throw new Error('job exploded');
       }
       completedIds.push(feedbackId);
-    });
+    }, logger);
 
     queue.enqueue('first');
     queue.enqueue('broken');
@@ -42,7 +44,6 @@ describe('createAnalysisQueue', () => {
     await queue.onIdle();
 
     expect(completedIds).toEqual(['first', 'last']);
-    expect(consoleError).toHaveBeenCalledWith('Analysis job failed for feedback broken:', expect.any(Error));
-    consoleError.mockRestore();
+    expect(logError).toHaveBeenCalledWith({ feedbackId: 'broken', err: expect.any(Error) }, 'Analysis job threw');
   });
 });
