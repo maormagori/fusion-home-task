@@ -58,6 +58,7 @@ src/
   analysis/analyzer.ts          validateRawOutput, analyzeOnce
   queue/analysis-queue.ts       createAnalysisQueue (p-queue)
   queue/analysis-worker.ts      processFeedback (retry + correction loop)
+  queue/recovery.ts             recoverPendingAnalyses (startup reset + enqueue)
   api/feedback.schemas.ts       Zod request + response schemas (the API contract; no server imports, UI-importable)
   api/feedback.routes.ts
   api/app.ts                    buildApp(deps)
@@ -165,6 +166,7 @@ export function createAnalysisQueue(concurrency: number,
 export function processFeedback(feedbackId: string,
   deps: { repo: FeedbackRepository; llm: LlmClient; maxAttempts: number; logger: Logger }): Promise<void>;
 
+export function recoverPendingAnalyses(repo: FeedbackRepository, queue: AnalysisQueue, logger: Logger): { interruptedCount: number; enqueuedCount: number }; // queue/recovery.ts
 // api/app.ts — Fastify uses the same logger (`loggerInstance`), so request logs and app logs share format and level
 export function buildApp(deps: { repo: FeedbackRepository; enqueue: (id: string) => void;
                                   maxContentLength: number; logger: Logger }): FastifyInstance;

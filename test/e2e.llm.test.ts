@@ -20,6 +20,7 @@ import { createFeedbackRepository } from '../src/feedback/feedback.repository.js
 import { createLogger } from '../src/logger.js';
 import { createAnalysisQueue } from '../src/queue/analysis-queue.js';
 import { processFeedback } from '../src/queue/analysis-worker.js';
+import { recoverPendingAnalyses } from '../src/queue/recovery.js';
 import { createTestConfig, createUnreachableLlmTestConfig } from './helpers/test-config.js';
 
 const { RECEIVED, ANALYZING, DONE, FAILED } = feedbackStatusSchema.enum;
@@ -30,17 +31,8 @@ function createHarness() {
   const repo = createFeedbackRepository(openDatabase(join(directory, 'feedback.db')));
   const logger = createLogger('silent');
   const llm = createOpenAiLlmClient(config);
-  const queue = createAnalysisQueue(config.ANALYSIS_CONCURRENCY, async (feedbackId) => {
-    const startedAt = performance.now();
-    await processFeedback(feedbackId, { repo, llm, maxAttempts: config.MAX_ATTEMPTS, logger });
-    const detail = repo.getDetail(feedbackId);
-    console.info('E2E analysis', {
-      content: detail?.content,
-      milliseconds: Math.round(performance.now() - startedAt),
-      attempts: detail?.attemptCount,
-      corrections: detail?.attempts.filter((attempt) => attempt.rawResponse !== null && attempt.error !== null).length,
-    });
-  }, logger);
+  const queue = createAnalysisQueue(config.ANALYSIS_CONCURRENCY,
+    (feedbackId) => processFeedback(feedbackId, { repo, llm, maxAttempts: config.MAX_ATTEMPTS, logger }), logger);
   const app = buildApp({ repo, enqueue: queue.enqueue, maxContentLength: config.MAX_CONTENT_LENGTH, logger });
   return { config, directory, repo, logger, queue, app };
 }
@@ -141,16 +133,11 @@ describe('HTTP through SQLite, queue, and real Ollama', () => {
   });
 
   it('recovers interrupted analysis and enqueues all received feedback', async () => {
-    const { repo, queue } = harness;
+    const { repo, queue, logger } = harness;
     const interrupted = repo.insertOrGetExisting('Please add dark mode for night work.').feedback.id;
     const waiting = repo.insertOrGetExisting('The new search works perfectly.').feedback.id;
     expect(repo.transition(interrupted, RECEIVED, ANALYZING)).toBe(true);
-    expect(repo.resetInterruptedAnalyses()).toBe(1);
-    const receivedIds = repo.listIdsByStatus(RECEIVED);
-    expect(receivedIds).toEqual(expect.arrayContaining([interrupted, waiting]));
-    for (const feedbackId of receivedIds) {
-      queue.enqueue(feedbackId);
-    }
+    expect(recoverPendingAnalyses(repo, queue, logger)).toEqual({ interruptedCount: 1, enqueuedCount: 2 });
     await queue.onIdle();
     await getDoneFeedback(interrupted);
     await getDoneFeedback(waiting);
