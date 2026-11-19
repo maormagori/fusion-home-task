@@ -50,26 +50,27 @@ Node 24, TypeScript (ESM, `"type": "module"`, strict), Fastify + `fastify-type-p
 src/
   config.ts                     loadConfig(): Config (Zod-validated env)
   logger.ts                     createLogger(level): Logger (the only logger; pino)
-  domain/types.ts               shared types (below)
   db/schema.ts                  Drizzle tables
   db/database.ts                openDatabase(path) → runs migrations from ./drizzle
   feedback/content-hash.ts      normalizeContent(), hashContent()
   feedback/feedback.repository.ts
-  analysis/analysis.schema.ts   Zod schema for LLM output + AnalysisResult type
   analysis/prompt.ts            system prompt, buildInitialMessages, buildCorrectionMessages
   analysis/llm-client.ts        LlmClient interface + createOpenAiLlmClient
   analysis/analyzer.ts          validateRawOutput, analyzeOnce
   queue/analysis-queue.ts       createAnalysisQueue (p-queue)
   queue/analysis-worker.ts      processFeedback (retry + correction loop)
   queue/recovery.ts             recoverPendingAnalyses (startup reset + enqueue)
-  api/feedback.schemas.ts       Zod request + response schemas (the API contract; no server imports, UI-importable)
   api/feedback.routes.ts
   api/app.ts                    buildApp(deps); serves UI_DIST_PATH at / when the folder exists
   server.ts                     wiring, startup recovery, listen
+packages/shared/                @feedback/shared workspace (depends only on zod)
+  src/models.ts                 feedback and attempt Zod schemas + inferred types
+  src/analysis.ts               LLM output Zod schema + AnalysisResult type
+  src/api.ts                    API schemas, paths, URL builders, limits and /config schema
 drizzle/                        generated migrations (committed)
 web/                            UI npm workspace (Vite + React): own package.json, tsconfig, vite.config.ts
-  src/models.ts                 the only file in web/ that imports backend models (schemas, types, paths)
-  src/api.ts                    one fetch function per endpoint, responses parsed with the backend schemas
+  src/models.ts                 the only file in web/ that imports @feedback/shared subpaths (schemas, types, paths)
+  src/api.ts                    one fetch function per endpoint, responses parsed with shared schemas
 test/                           mirrors src/, e.g. test/feedback/feedback.repository.test.ts
 ```
 
@@ -78,7 +79,7 @@ test/                           mirrors src/, e.g. test/feedback/feedback.reposi
 These are the agreed interfaces between modules. T1 creates the types; later tasks implement them.
 
 ```ts
-// domain/types.ts — model fields defined once in Zod
+// packages/shared/src/models.ts — model fields defined once in Zod
 export const FEEDBACK_STATUSES = ['RECEIVED', 'ANALYZING', 'DONE', 'FAILED'] as const;
 export const feedbackStatusSchema = z.enum(FEEDBACK_STATUSES);
 export const feedbackSchema = z.object({
@@ -108,7 +109,7 @@ export type FeedbackDetail = z.infer<typeof feedbackDetailSchema>;
 ```
 
 ```ts
-// analysis/analysis.schema.ts
+// packages/shared/src/analysis.ts
 export const analysisResultSchema = z.strictObject({
   sentiment: z.enum(['positive', 'neutral', 'negative']),
   feature_requests: z.array(z.strictObject({
@@ -211,7 +212,6 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - Pass dependencies in as arguments. No module-level singletons except in `server.ts`.
 - Named exports only. Explicit return types on exported functions.
 - Don't add an abstraction (helper, generic, wrapper) that has only one caller unless it makes the caller clearly easier to read.
-- web/ imports backend models only through web/src/models.ts.
 
 **Naming**
 - Names say what the thing *is* in domain terms: `feedbackId`, `rawResponse`, `attemptNumber` — not `data`, `res`, `obj`, `tmp`, `x`.
@@ -228,7 +228,10 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - No `any`, no `as` casts except at a parsing boundary with a comment. No non-null `!` assertions.
 - Prefer simple types and interfaces; avoid advanced generics, conditional or mapped types.
 - Let Zod infer types instead of writing the same shape twice.
-- Models are defined once as Zod schemas; TypeScript types are `z.infer` of them. Never write an interface that repeats a schema.
+- Models are defined once as Zod schemas in `packages/shared/src/`; TypeScript types are `z.infer` of them. Never write an interface that repeats a schema.
+- Backend and tests import `@feedback/shared/models`, `@feedback/shared/analysis`, or `@feedback/shared/api`.
+- Only `web/src/models.ts` imports these shared subpaths in `web/`; other UI files import from that file. Never reach into backend `src/`.
+- The shared package imports only its own modules and `zod`; no backend, database, or Node dependencies. No barrel file.
 
 **Comments**
 - **Add code comments only when necessary.** Clear names and small functions should explain the code on their own.
@@ -250,7 +253,7 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - When a value has no source of truth yet but is used in 2+ places, create one (a named constant or schema) instead
   of repeating the literal.
 
-HTTP status codes: StatusCodes from http-status-codes. API paths: the constants and URL builders in src/api/feedback.schemas.ts.
+HTTP status codes: StatusCodes from http-status-codes. API paths: the constants and URL builders in packages/shared/src/api.ts.
 
 **Logging**
 - Use the injected `Logger` only. **No `console.*` anywhere** in `src/` (tests and scripts included unless printing is the point).

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { analysisResultSchema } from '../analysis/analysis.schema.js';
+import { analysisResultSchema } from '@feedback/shared/analysis';
 
 export const FEEDBACK_STATUSES = ['RECEIVED', 'ANALYZING', 'DONE', 'FAILED'] as const;
 export const feedbackStatusSchema = z.enum(FEEDBACK_STATUSES);

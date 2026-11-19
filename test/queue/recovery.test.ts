@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
-import { feedbackStatusSchema } from '../../src/domain/types.js';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import { createFeedbackRepository } from '../../src/feedback/feedback.repository.js';
 import { createLogger } from '../../src/logger.js';
 import { createAnalysisQueue } from '../../src/queue/analysis-queue.js';

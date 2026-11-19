@@ -1,7 +1,7 @@
 import { analyzeOnce, type AttemptOutcome } from '../analysis/analyzer.js';
 import type { LlmClient } from '../analysis/llm-client.js';
 import { buildCorrectionMessages, buildInitialMessages } from '../analysis/prompt.js';
-import { feedbackStatusSchema, type AnalysisAttempt } from '../domain/types.js';
+import { feedbackStatusSchema, type AnalysisAttempt } from '@feedback/shared/models';
 import type { FeedbackRepository } from '../feedback/feedback.repository.js';
 import type { Logger } from '../logger.js';
 

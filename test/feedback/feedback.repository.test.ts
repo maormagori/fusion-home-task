@@ -1,10 +1,10 @@
 import { sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { analysisAttempts } from '../../src/db/schema.js';
-import { feedbackStatusSchema } from '../../src/domain/types.js';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import { IN_MEMORY_PATH, openDatabase, type Database } from '../../src/db/database.js';
 import { createFeedbackRepository, type FeedbackRepository } from '../../src/feedback/feedback.repository.js';
-import { sentimentSchema, type AnalysisResult } from '../../src/analysis/analysis.schema.js';
+import { sentimentSchema, type AnalysisResult } from '@feedback/shared/analysis';
 
 const VALID_RESULT: AnalysisResult = {
   sentiment: sentimentSchema.enum.positive,

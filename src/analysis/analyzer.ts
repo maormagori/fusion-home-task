@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { analysisResultSchema, type AnalysisResult } from './analysis.schema.js';
+import { analysisResultSchema, type AnalysisResult } from '@feedback/shared/analysis';
 import { LlmCallError, type ChatMessage, type LlmClient } from './llm-client.js';
 
 export type AttemptOutcome =

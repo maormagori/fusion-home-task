@@ -1,4 +1,4 @@
-import { sentimentSchema } from './analysis.schema.js';
+import { sentimentSchema } from '@feedback/shared/analysis';
 import type { ChatMessage } from './llm-client.js';
 
 export const FEEDBACK_START = '<<<FEEDBACK>>>';

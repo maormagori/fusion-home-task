@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { StatusCodes } from 'http-status-codes';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { analysisResultSchema } from '../src/analysis/analysis.schema.js';
+import { analysisResultSchema } from '@feedback/shared/analysis';
 import { createOpenAiLlmClient } from '../src/analysis/llm-client.js';
 import { buildApp } from '../src/api/app.js';
 import {
@@ -13,9 +13,9 @@ import {
   feedbackRetryUrl,
   retryFeedbackResponseSchema,
   submitFeedbackResponseSchema,
-} from '../src/api/feedback.schemas.js';
+} from '@feedback/shared/api';
 import { openDatabase } from '../src/db/database.js';
-import { feedbackDetailSchema, feedbackStatusSchema } from '../src/domain/types.js';
+import { feedbackDetailSchema, feedbackStatusSchema } from '@feedback/shared/models';
 import { createFeedbackRepository } from '../src/feedback/feedback.repository.js';
 import { createLogger } from '../src/logger.js';
 import { createAnalysisQueue } from '../src/queue/analysis-queue.js';

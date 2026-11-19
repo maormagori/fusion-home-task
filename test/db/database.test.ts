@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
-import { feedbackStatusSchema } from '../../src/domain/types.js';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
 import { feedback } from '../../src/db/schema.js';
 

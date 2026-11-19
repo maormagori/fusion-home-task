@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../../src/api/app.js';
-import { CONFIG_PATH, configResponseSchema } from '../../src/api/feedback.schemas.js';
+import { CONFIG_PATH, configResponseSchema } from '@feedback/shared/api';
 import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
 import { createFeedbackRepository } from '../../src/feedback/feedback.repository.js';
 import { createLogger } from '../../src/logger.js';

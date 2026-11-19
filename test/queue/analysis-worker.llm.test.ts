@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { feedbackStatusSchema } from '../../src/domain/types.js';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
 import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
 import { createFeedbackRepository } from '../../src/feedback/feedback.repository.js';

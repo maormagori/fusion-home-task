@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 import type { Config } from '../config.js';
-import { analysisResultSchema } from './analysis.schema.js';
+import { analysisResultSchema } from '@feedback/shared/analysis';
 
 export type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 

@@ -5,7 +5,7 @@ import { StatusCodes } from 'http-status-codes';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../src/api/app.js';
-import { FEEDBACK_PATH, feedbackListResponseSchema } from '../../src/api/feedback.schemas.js';
+import { FEEDBACK_PATH, feedbackListResponseSchema } from '@feedback/shared/api';
 import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
 import { createFeedbackRepository } from '../../src/feedback/feedback.repository.js';
 import { createLogger } from '../../src/logger.js';

@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { feedbackDetailSchema, feedbackStatusSchema } from '../domain/types.js';
+import { feedbackDetailSchema, feedbackStatusSchema } from '@feedback/shared/models';
 import type { FeedbackRepository } from '../feedback/feedback.repository.js';
 import {
   CONFIG_PATH,
@@ -16,7 +16,7 @@ import {
   retryConflictResponseSchema,
   retryFeedbackResponseSchema,
   submitFeedbackResponseSchema,
-} from './feedback.schemas.js';
+} from '@feedback/shared/api';
 
 export interface FeedbackRoutesOptions {
   repo: FeedbackRepository;

@@ -2,7 +2,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { StatusCodes } from 'http-status-codes';
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildCorrectionMessages, buildInitialMessages } from '../src/analysis/prompt.js';
-import { feedbackStatusSchema } from '../src/domain/types.js';
+import { feedbackStatusSchema } from '@feedback/shared/models';
 import { createScriptedWorkflow, VALID_RAW } from './helpers/scripted-workflow.js';
 import { createUnreachableLlmTestConfig } from './helpers/test-config.js';
 import { createWorkflowHarness, expectSettled, waitForIdle, type WorkflowHarness } from './helpers/workflow-harness.js';

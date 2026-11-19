@@ -2,7 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { createServer } from 'node:net';
 import { StatusCodes } from 'http-status-codes';
 import { expect } from 'vitest';
-import { FEEDBACK_PATH } from '../../src/api/feedback.schemas.js';
+import { FEEDBACK_PATH } from '@feedback/shared/api';
 import type { Config } from '../../src/config.js';
 import { TEST_HOST } from './test-config.js';
 
