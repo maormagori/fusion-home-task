@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { feedbackStatusSchema } from '../../src/domain/types.js';
 import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
-import { openDatabase } from '../../src/db/database.js';
+import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
 import { createFeedbackRepository, type FeedbackRepository } from '../../src/feedback/feedback.repository.js';
 import { createLogger } from '../../src/logger.js';
 import { processFeedback } from '../../src/queue/analysis-worker.js';
@@ -13,18 +14,18 @@ const logger = createLogger('silent');
 let repo: FeedbackRepository;
 
 beforeEach(() => {
-  repo = createFeedbackRepository(openDatabase(':memory:'));
+  repo = createFeedbackRepository(openDatabase(IN_MEMORY_PATH));
 });
 
 describe('processFeedback', () => {
   it('does nothing when the item is not RECEIVED', async () => {
     const feedbackId = repo.insertOrGetExisting('The app crashes.').feedback.id;
-    repo.transition(feedbackId, 'RECEIVED', 'ANALYZING');
+    repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING);
 
     await processFeedback(feedbackId, { repo, llm: unreachableLlm, maxAttempts: MAX_ATTEMPTS, logger });
 
     const detail = repo.getDetail(feedbackId);
-    expect(detail?.status).toBe('ANALYZING');
+    expect(detail?.status).toBe(feedbackStatusSchema.enum.ANALYZING);
     expect(detail?.attempts).toEqual([]);
   });
 
@@ -34,7 +35,7 @@ describe('processFeedback', () => {
     await processFeedback(feedbackId, { repo, llm: unreachableLlm, maxAttempts: MAX_ATTEMPTS, logger });
 
     const detail = repo.getDetail(feedbackId);
-    expect(detail?.status).toBe('FAILED');
+    expect(detail?.status).toBe(feedbackStatusSchema.enum.FAILED);
     expect(detail?.attempts.map((attempt) => attempt.attemptNumber)).toEqual([1, 2, 3]);
     for (const attempt of detail?.attempts ?? []) {
       expect(attempt.rawResponse).toBeNull();
@@ -58,7 +59,7 @@ describe('processFeedback', () => {
     })).resolves.toBeUndefined();
 
     const feedback = repo.findById(feedbackId);
-    expect(feedback?.status).toBe('FAILED');
+    expect(feedback?.status).toBe(feedbackStatusSchema.enum.FAILED);
     expect(feedback?.lastError).toBe('Unexpected error during analysis: disk full');
   });
 });

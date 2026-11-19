@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { analysisResultSchema } from '../../src/analysis/analysis.schema.js';
+import { analysisResultSchema, sentimentSchema } from '../../src/analysis/analysis.schema.js';
 
 const validSample = {
-  sentiment: 'negative',
+  sentiment: sentimentSchema.enum.negative,
   feature_requests: [{ title: 'Dark mode', confidence: 0.9 }],
   actionable_insight: 'Users want a dark theme for night use.',
 };

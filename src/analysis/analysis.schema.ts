@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
+export const sentimentSchema = z.enum(['positive', 'neutral', 'negative']);
+
 export const analysisResultSchema = z.strictObject({
-  sentiment: z.enum(['positive', 'neutral', 'negative']),
+  sentiment: sentimentSchema,
   feature_requests: z.array(z.strictObject({
     title: z.string().min(1),
     confidence: z.number().min(0).max(1),
