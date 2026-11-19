@@ -174,6 +174,7 @@ process), then enqueue every `RECEIVED` item. Without this, an in-process queue 
 |---|---|
 | `GET /feedback?status=&limit=&offset=` | Items newest first: `id, content, status, created_at, updated_at, last_error, attempt_count, analysis` |
 | `GET /feedback/:id` | Same item plus `attempts[]` (raw responses, errors) |
+| `GET /config` | `{ maxContentLength }`, so the UI shows the limit without hard-coding it |
 
 `analysis` is the validated result and is non-null only when `status = DONE`.
 
@@ -194,6 +195,7 @@ process), then enqueue every `RECEIVED` item. Without this, an in-process queue 
 | `LOG_LEVEL` | `info` | Pino log level: fatal, error, warn, info, debug, trace, or silent |
 | `PORT` | `3000` | HTTP port |
 | `DB_PATH` | `./data/feedback.db` | SQLite file |
+| `UI_DIST_PATH` | `./web/dist` | Built UI folder; served at `/` only if it exists |
 | `LLM_BASE_URL` | `http://localhost:11434/v1` | Ollama, or `https://api.openai.com/v1` |
 | `LLM_API_KEY` | `ollama` | Ignored by Ollama, required by OpenAI |
 | `LLM_MODEL` | `qwen2.5:7b-instruct` | Model name |
@@ -215,6 +217,6 @@ and a FAILED duplicate is returned as FAILED rather than re-analyzed, so the cal
 - In-process queue: jobs live in memory; startup recovery covers crashes, but there is no multi-instance support.
 - Content over `MAX_CONTENT_LENGTH` is rejected, not truncated.
 - Concurrency is fixed per process. Adaptive concurrency (back off on 429s) is future work.
-- No auth, no deployment config (explicitly out of scope). The UI is a minimal Vite + React page (`web/`) built on the API's Zod schemas; served by Fastify when built.
+- No auth, no deployment config (explicitly out of scope). The UI is a minimal Vite + React page (`web/`, its own npm workspace) built on the API's Zod schemas. `buildApp` serves `UI_DIST_PATH` with `@fastify/static` only when that folder exists, so API-only runs and tests are unaffected.
 - Tests that need the LLM call the real local Ollama. They are slower and not deterministic, so the
   correction path is unit-tested on the pure functions (validation, correction message), not by forcing a bad model output.

@@ -1,6 +1,6 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { StatusCodes } from 'http-status-codes';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -45,6 +45,16 @@ describe('static UI', () => {
     expect(page.body).toBe(INDEX_HTML);
     expect(list.statusCode).toBe(StatusCodes.OK);
     expect(feedbackListResponseSchema.parse(list.json()).items).toEqual([]);
+    await app.close();
+  });
+
+  it('accepts a UI folder path relative to the working directory', async () => {
+    const app = buildTestApp(relative(process.cwd(), uiDistPath));
+
+    const page = await app.inject({ method: 'GET', url: '/' });
+
+    expect(page.statusCode).toBe(StatusCodes.OK);
+    expect(page.body).toBe(INDEX_HTML);
     await app.close();
   });
 

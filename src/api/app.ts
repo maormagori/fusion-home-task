@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import fastifyStatic from '@fastify/static';
 import { StatusCodes } from 'http-status-codes';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
@@ -32,7 +33,8 @@ export function buildApp(deps: BuildAppOptions): FastifyInstance {
   app.register(feedbackRoutes, deps);
   // The UI is optional: API-only runs (tests, CI without a web build) have no built folder to serve.
   if (deps.uiDistPath && existsSync(deps.uiDistPath)) {
-    app.register(fastifyStatic, { root: deps.uiDistPath });
+    // @fastify/static needs an absolute root; UI_DIST_PATH is relative to the working directory, like DB_PATH.
+    app.register(fastifyStatic, { root: resolve(deps.uiDistPath) });
   }
   return app;
 }

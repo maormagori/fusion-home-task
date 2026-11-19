@@ -31,6 +31,9 @@ npm run typecheck    # tsc --noEmit
 npm test             # vitest run, excludes *.llm.test.ts (no Ollama needed)
 npm run test:llm     # vitest run on *.llm.test.ts only (needs local Ollama running)
 npm run db:generate  # drizzle-kit generate (after changing src/db/schema.ts)
+npm run web:dev      # Vite dev server for web/, proxies /feedback and /config to :3000
+npm run web:build    # builds web/dist; npm run dev then serves it at /
+npm run web:typecheck
 ```
 
 Local LLM: Ollama at `http://localhost:11434/v1`, model `qwen2.5:7b-instruct`.
@@ -58,14 +61,16 @@ src/
   queue/analysis-worker.ts      processFeedback (retry + correction loop)
   queue/recovery.ts             recoverPendingAnalyses (startup reset + enqueue)
   api/feedback.routes.ts
-  api/app.ts                    buildApp(deps)
+  api/app.ts                    buildApp(deps); serves UI_DIST_PATH at / when the folder exists
   server.ts                     wiring, startup recovery, listen
 packages/shared/                @feedback/shared workspace (depends only on zod)
   src/models.ts                 feedback and attempt Zod schemas + inferred types
   src/analysis.ts               LLM output Zod schema + AnalysisResult type
   src/api.ts                    API schemas, paths, URL builders, limits and /config schema
-web/                            Vite + React workspace; models imported through web/src/models.ts
 drizzle/                        generated migrations (committed)
+web/                            UI npm workspace (Vite + React): own package.json, tsconfig, vite.config.ts
+  src/models.ts                 the only file in web/ that imports @feedback/shared subpaths (schemas, types, paths)
+  src/api.ts                    one fetch function per endpoint, responses parsed with shared schemas
 test/                           mirrors src/, e.g. test/feedback/feedback.repository.test.ts
 ```
 
@@ -173,7 +178,7 @@ export function processFeedback(feedbackId: string,
 export function recoverPendingAnalyses(repo: FeedbackRepository, queue: AnalysisQueue, logger: Logger): { interruptedCount: number; enqueuedCount: number }; // queue/recovery.ts
 // api/app.ts — Fastify uses the same logger (`loggerInstance`), so request logs and app logs share format and level
 export function buildApp(deps: { repo: FeedbackRepository; enqueue: (id: string) => void;
-                                  maxContentLength: number; logger: Logger }): FastifyInstance;
+                                  maxContentLength: number; logger: Logger; uiDistPath?: string }): FastifyInstance;
 ```
 
 ## State rules (do not break these)

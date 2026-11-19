@@ -4,6 +4,7 @@ const configSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   PORT: z.coerce.number().int().positive().default(3000),
   DB_PATH: z.string().min(1).default('./data/feedback.db'),
+  UI_DIST_PATH: z.string().min(1).default('./web/dist'),
   LLM_BASE_URL: z.url().default('http://localhost:11434/v1'),
   LLM_API_KEY: z.string().min(1).default('ollama'),
   LLM_MODEL: z.string().min(1).default('qwen2.5:7b-instruct'),
