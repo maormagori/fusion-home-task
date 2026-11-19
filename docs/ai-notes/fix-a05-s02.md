@@ -1,4 +1,4 @@
-Agent / model: Codex, GPT-6
+Agent / model: Codex, gpt-6.1-sol, medium effort
 # fix-a05-s02 — Empty replies and atomic analysis completion
 
 ## Prompts that mattered
