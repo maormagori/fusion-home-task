@@ -13,8 +13,10 @@ flowchart LR
     T4 --> T6[T6 End-to-end + fixes]
     T5 --> T6
     T6 --> T8[T8 Minimal UI]
-    T6 --> T7[T7 README + AI log]
-    T8 --> T7
+    T6 --> T9[T9 Independent review]
+    T9 --> T10[T10 Tradeoff session + fixes]
+    T8 --> T10
+    T10 --> T7[T7 README + AI log]
 ```
 
 Agents are mixed to spread token use: Claude for T1–T5 and T8 (T8 needs the `ui-ux-pro-max` skill and Playwright MCP),
@@ -29,7 +31,9 @@ Codex (`gpt-6.1-sol`, medium effort) for T6 and for follow-up fixes where possib
 | T5 | [Queue, worker, server](T5-queue-worker.md) | T2, T3 | 35m |
 | T6 | [End-to-end + fixes](T6-e2e.md) | T4, T5 | 25m |
 | T8 | [Minimal UI](T8-ui.md) (uses `ui-ux-pro-max`) | T6 (only once the backend is proven end to end) | 35m |
-| T7 | [README + AI Collaboration Log](T7-readme.md) | T8 (written last, once everything is done) | 20m (manager + owner) |
+| T9 | [Independent code review](T9-review.md) (read-only, Codex) | T6 (parallel with T8) | 25m |
+| T10 | [Tradeoff session + review fixes](T10-tradeoffs.md) | T9, T8 | 25m (manager + owner, fixes by workers) |
+| T7 | [README + AI Collaboration Log](T7-readme.md) | T10 (written last, once everything is done) | 20m (manager + owner) |
 
 Every worker: read `CLAUDE.md`, `docs/ARCHITECTURE.md`, and your brief. Stay inside your file list.
 Done means: `npm run typecheck` and `npm test` pass locally (plus `npm run test:llm` where the brief says so),
