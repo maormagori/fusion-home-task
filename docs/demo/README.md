@@ -13,12 +13,12 @@ node docs/demo/record.mjs http://localhost:3100 /tmp/demo-out              # set
 ffmpeg -i /tmp/demo-out/*.webm -c:v libx264 -crf 28 -pix_fmt yuv420p -movflags +faststart /tmp/silent.mp4
 ```
 
-The background music is synthesized by `music.py` (a Cmaj7–Am7–Fmaj7–G6 pad plus a soft arpeggio, standard library
-only), so there is nothing to license. It is mixed in quietly with fades:
+The background music is synthesized by `music.py` (an upbeat C–G–Am–F loop at 112 BPM: plucked chords and bass, kick,
+hi-hat and a bell arpeggio; needs numpy), so there is nothing to license. It is mixed in quietly with fades:
 
 ```bash
 python3 docs/demo/music.py /tmp/music.wav 35
 ffmpeg -i /tmp/silent.mp4 -i /tmp/music.wav -filter_complex \
-  "[1:a]lowpass=f=2500,aecho=0.8:0.7:120|240:0.25|0.15,volume=1.1,afade=t=in:d=2,afade=t=out:st=32.5:d=2.5[a]" \
-  -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 96k -shortest -movflags +faststart docs/demo/demo.mp4
+  "[1:a]volume=0.55,afade=t=in:d=1,afade=t=out:st=32.5:d=2.5[a]" \
+  -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 128k -shortest -movflags +faststart docs/demo/demo.mp4
 ```
