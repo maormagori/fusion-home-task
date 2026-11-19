@@ -1,4 +1,4 @@
-Agent / model: Codex, GPT-6
+Agent / model: Codex, gpt-6.1-sol, medium effort
 
 # Review fixes
 

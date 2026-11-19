@@ -1,4 +1,4 @@
-Agent / model: Codex, GPT-6 (exact runtime variant and effort not exposed)
+Agent / model: Codex, gpt-6.1-sol, medium effort
 
 # Literals sweep
 
