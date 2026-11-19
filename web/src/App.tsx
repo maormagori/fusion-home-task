@@ -3,17 +3,19 @@ import type { FeedbackStatus, FeedbackView, SubmitFeedbackResponse } from './mod
 import { FeedbackDetailPanel } from './components/FeedbackDetailPanel.js';
 import { FeedbackList } from './components/FeedbackList.js';
 import { SubmitForm } from './components/SubmitForm.js';
-import { useFeedbackList } from './useFeedbackList.js';
+import { isAnalysisInProgress, useFeedbackList } from './useFeedbackList.js';
 
 export function App(): JSX.Element {
   const [statusFilter, setStatusFilter] = useState<FeedbackStatus | undefined>(undefined);
   const [offset, setOffset] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
   const list = useFeedbackList(statusFilter, offset);
 
   function handleSubmitted(response: SubmitFeedbackResponse): void {
     setSelectedId(response.id);
+    setSubmittedId(response.id);
     setHighlightedId(response.duplicate ? response.id : null);
     void list.reload();
   }
@@ -29,6 +31,9 @@ export function App(): JSX.Element {
   }
 
   const selectedItem = list.items?.find((item) => item.id === selectedId);
+  // Until the list shows the submitted item, assume its analysis is still running so the notice does not flicker.
+  const submittedItem = list.items?.find((item) => item.id === submittedId);
+  const isSubmittedItemAnalyzing = submittedItem ? isAnalysisInProgress(submittedItem.status) : true;
 
   return (
     <div className="page">
@@ -38,7 +43,7 @@ export function App(): JSX.Element {
       </header>
       <main className="layout">
         <div className="column">
-          <SubmitForm onSubmitted={handleSubmitted} />
+          <SubmitForm isSubmittedItemAnalyzing={isSubmittedItemAnalyzing} onSubmitted={handleSubmitted} />
           <FeedbackList
             items={list.items}
             error={list.error}

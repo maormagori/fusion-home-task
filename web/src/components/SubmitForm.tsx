@@ -8,7 +8,12 @@ const DUPLICATE_MESSAGE = 'This feedback was already submitted';
 
 type Notice = { kind: 'success' | 'info' | 'error'; text: string };
 
-export function SubmitForm({ onSubmitted }: { onSubmitted: (response: SubmitFeedbackResponse) => void }): JSX.Element {
+interface SubmitFormProps {
+  isSubmittedItemAnalyzing: boolean;
+  onSubmitted: (response: SubmitFeedbackResponse) => void;
+}
+
+export function SubmitForm({ isSubmittedItemAnalyzing, onSubmitted }: SubmitFormProps): JSX.Element {
   const [content, setContent] = useState('');
   const [maxContentLength, setMaxContentLength] = useState<number | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -40,6 +45,8 @@ export function SubmitForm({ onSubmitted }: { onSubmitted: (response: SubmitFeed
 
   const isOverLimit = maxContentLength !== null && content.length > maxContentLength;
   const canSubmit = maxContentLength !== null && !isSending;
+  const isNoticeStale = notice?.kind === 'success' && !isSubmittedItemAnalyzing;
+  const visibleNotice = isNoticeStale ? null : notice;
 
   return (
     <section className="panel" aria-labelledby="submit-heading">
@@ -62,8 +69,8 @@ export function SubmitForm({ onSubmitted }: { onSubmitted: (response: SubmitFeed
             {isSending ? 'Sending…' : 'Submit'}
           </button>
         </div>
-        <p className="notice" data-kind={notice?.kind} role="status" aria-live="polite">
-          {notice?.text}
+        <p className="notice" data-kind={visibleNotice?.kind} role="status" aria-live="polite">
+          {visibleNotice?.text}
         </p>
       </form>
     </section>

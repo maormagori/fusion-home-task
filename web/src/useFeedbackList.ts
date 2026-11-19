@@ -9,6 +9,10 @@ const IN_PROGRESS_STATUSES: readonly FeedbackStatus[] = [
   feedbackStatusSchema.enum.ANALYZING,
 ];
 
+export function isAnalysisInProgress(status: FeedbackStatus): boolean {
+  return IN_PROGRESS_STATUSES.includes(status);
+}
+
 export interface FeedbackListState {
   items: FeedbackView[] | null;
   error: string | null;
@@ -34,7 +38,7 @@ export function useFeedbackList(statusFilter: FeedbackStatus | undefined, offset
     void reload();
   }, [reload]);
 
-  const isAnyItemInProgress = items?.some((item) => IN_PROGRESS_STATUSES.includes(item.status)) ?? false;
+  const isAnyItemInProgress = items?.some((item) => isAnalysisInProgress(item.status)) ?? false;
   useEffect(() => {
     if (!isAnyItemInProgress) {
       return;
