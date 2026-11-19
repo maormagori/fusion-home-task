@@ -4,12 +4,13 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
+import type { Config } from '../config.js';
 import { feedbackRoutes, type FeedbackRoutesOptions } from './feedback.routes.js';
 
 const BAD_REQUEST = 400;
 
-export function buildApp(deps: FeedbackRoutesOptions): FastifyInstance {
-  const app = Fastify({ logger: true });
+export function buildApp(deps: FeedbackRoutesOptions & { logLevel: Config['LOG_LEVEL'] }): FastifyInstance {
+  const app = Fastify({ logger: { level: deps.logLevel } });
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 

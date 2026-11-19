@@ -1,9 +1,9 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { feedbackDetailSchema } from '../domain/types.js';
 import type { FeedbackRepository } from '../feedback/feedback.repository.js';
 import {
   createSubmitFeedbackBodySchema,
   errorResponseSchema,
-  feedbackDetailSchema,
   feedbackIdParamsSchema,
   feedbackListResponseSchema,
   listFeedbackQuerySchema,

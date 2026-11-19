@@ -4,12 +4,12 @@ import { analysisResultSchema, type AnalysisResult } from '../../src/analysis/an
 import { buildApp } from '../../src/api/app.js';
 import {
   errorResponseSchema,
-  feedbackDetailSchema,
   feedbackListResponseSchema,
   retryConflictResponseSchema,
   retryFeedbackResponseSchema,
   submitFeedbackResponseSchema,
 } from '../../src/api/feedback.schemas.js';
+import { feedbackDetailSchema } from '../../src/domain/types.js';
 import { openDatabase } from '../../src/db/database.js';
 import { createFeedbackRepository, type FeedbackRepository } from '../../src/feedback/feedback.repository.js';
 
@@ -28,7 +28,7 @@ let app: FastifyInstance;
 beforeEach(() => {
   repo = createFeedbackRepository(openDatabase(':memory:'));
   enqueue = vi.fn();
-  app = buildApp({ repo, enqueue, maxContentLength: MAX_CONTENT_LENGTH });
+  app = buildApp({ repo, enqueue, maxContentLength: MAX_CONTENT_LENGTH, logLevel: 'silent' });
 });
 
 afterEach(async () => {

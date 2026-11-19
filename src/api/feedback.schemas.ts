@@ -1,16 +1,8 @@
 import { z } from 'zod';
-import { analysisResultSchema } from '../analysis/analysis.schema.js';
-import {
-  FEEDBACK_STATUSES,
-  type AnalysisAttempt,
-  type FeedbackDetail,
-  type FeedbackView,
-} from '../domain/types.js';
+import { feedbackStatusSchema, feedbackViewSchema } from '../domain/types.js';
 
 export const DEFAULT_LIST_LIMIT = 20;
 export const MAX_LIST_LIMIT = 100;
-
-export const feedbackStatusSchema = z.enum(FEEDBACK_STATUSES);
 
 // The max length is a server setting (MAX_CONTENT_LENGTH), so the body schema is built from it.
 export function createSubmitFeedbackBodySchema(
@@ -39,32 +31,6 @@ export const submitFeedbackResponseSchema = z.object({
   duplicate: z.boolean(),
 });
 export type SubmitFeedbackResponse = z.infer<typeof submitFeedbackResponseSchema>;
-
-export const feedbackViewSchema = z.object({
-  id: z.string(),
-  content: z.string(),
-  contentHash: z.string(),
-  status: feedbackStatusSchema,
-  lastError: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  attemptCount: z.number().int(),
-  analysis: analysisResultSchema.nullable(),
-}) satisfies z.ZodType<FeedbackView>;
-
-export const analysisAttemptSchema = z.object({
-  id: z.number().int(),
-  feedbackId: z.string(),
-  attemptNumber: z.number().int(),
-  rawResponse: z.string().nullable(),
-  result: analysisResultSchema.nullable(),
-  error: z.string().nullable(),
-  createdAt: z.string(),
-}) satisfies z.ZodType<AnalysisAttempt>;
-
-export const feedbackDetailSchema = feedbackViewSchema.extend({
-  attempts: z.array(analysisAttemptSchema),
-}) satisfies z.ZodType<FeedbackDetail>;
 
 export const feedbackListResponseSchema = z.object({
   items: z.array(feedbackViewSchema),
