@@ -186,8 +186,6 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 
 **Structure**
 - One responsibility per file. Aim for files under ~150 lines and functions under ~30 lines.
-- Each file starts with a 1–3 line comment saying what the file is for and where it sits in the flow
-  (e.g. "Worker: runs one analysis job — claims the item, calls the LLM up to N times, records the result").
 - Read top-down: exported/main function first, private helpers below it.
 - Factory functions returning plain objects (`createX(deps)`); no classes, no DI framework, no barrel `index.ts` files.
 - Pass dependencies in as arguments. No module-level singletons except in `server.ts`.
@@ -211,7 +209,10 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - Let Zod infer types instead of writing the same shape twice.
 
 **Comments**
-- Comment the *why*, not the *what*. Explain non-obvious decisions (e.g. why a conditional UPDATE, why we don't repair JSON).
+- **Add code comments only when necessary.** Clear names and small functions should explain the code on their own.
+- A comment is necessary only when the *why* can't be read from the code: a non-obvious decision or constraint
+  (e.g. why a conditional UPDATE, why we don't repair JSON). Never comment *what* the code does.
+- No file-header comments, no comments restating a function or variable name, no JSDoc on obvious functions.
 - No commented-out code, no TODOs without a note in your ai-notes.
 
 **Errors**
