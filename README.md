@@ -7,10 +7,6 @@ queue and can be retried by hand. A small React UI sits on top of the same API.
 
 ![Detail view of an analyzed feedback item](docs/screenshots/03-done-detail.png)
 
-Demo video (35 s, real app and real model): [`docs/demo/demo.mp4`](docs/demo/demo.mp4).
-Music: "Carefree" by Kevin MacLeod ([incompetech.com](https://incompetech.com)), licensed under
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-
 - Architecture, data model, state machine and flows: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Every tradeoff and review decision: [`docs/TRADEOFFS.md`](docs/TRADEOFFS.md)
 - How it was built with AI: [`docs/AI_COLLABORATION_LOG.md`](docs/AI_COLLABORATION_LOG.md)
