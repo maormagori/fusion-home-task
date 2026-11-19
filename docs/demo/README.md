@@ -13,12 +13,12 @@ node docs/demo/record.mjs http://localhost:3100 /tmp/demo-out              # set
 ffmpeg -i /tmp/demo-out/*.webm -c:v libx264 -crf 28 -pix_fmt yuv420p -movflags +faststart /tmp/silent.mp4
 ```
 
-Background music: the first 35 s of "Carefree" by Kevin MacLeod (incompetech.com), mixed in quietly with a fade-out:
+Background music: the first 35 s of "Carefree" by Kevin MacLeod (incompetech.com), mixed in with a fade-out:
 
 ```bash
 curl -L -o /tmp/carefree.mp3 https://incompetech.com/music/royalty-free/mp3-royaltyfree/Carefree.mp3
 ffmpeg -i /tmp/silent.mp4 -i /tmp/carefree.mp3 -filter_complex \
-  "[1:a]atrim=0:35,volume=0.35,afade=t=in:d=0.5,afade=t=out:st=32:d=3[a]" \
+  "[1:a]atrim=0:35,volume=1.0,afade=t=in:d=0.5,afade=t=out:st=32:d=3[a]" \
   -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 128k -shortest -movflags +faststart docs/demo/demo.mp4
 ```
 
