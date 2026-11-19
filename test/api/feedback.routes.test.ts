@@ -12,6 +12,7 @@ import {
 import { feedbackDetailSchema } from '../../src/domain/types.js';
 import { openDatabase } from '../../src/db/database.js';
 import { createFeedbackRepository, type FeedbackRepository } from '../../src/feedback/feedback.repository.js';
+import { createLogger } from '../../src/logger.js';
 
 const MAX_CONTENT_LENGTH = 50;
 
@@ -28,7 +29,7 @@ let app: FastifyInstance;
 beforeEach(() => {
   repo = createFeedbackRepository(openDatabase(':memory:'));
   enqueue = vi.fn();
-  app = buildApp({ repo, enqueue, maxContentLength: MAX_CONTENT_LENGTH, logLevel: 'silent' });
+  app = buildApp({ repo, enqueue, maxContentLength: MAX_CONTENT_LENGTH, logger: createLogger('silent') });
 });
 
 afterEach(async () => {

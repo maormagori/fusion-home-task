@@ -1,16 +1,18 @@
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import {
   hasZodFastifySchemaValidationErrors,
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
-import type { Config } from '../config.js';
+import type { Logger } from '../logger.js';
 import { feedbackRoutes, type FeedbackRoutesOptions } from './feedback.routes.js';
 
 const BAD_REQUEST = 400;
 
-export function buildApp(deps: FeedbackRoutesOptions & { logLevel: Config['LOG_LEVEL'] }): FastifyInstance {
-  const app = Fastify({ logger: { level: deps.logLevel } });
+export function buildApp(deps: FeedbackRoutesOptions & { logger: Logger }): FastifyInstance {
+  // Typed as Fastify's base logger so buildApp keeps returning the plain FastifyInstance from the contract.
+  const loggerInstance: FastifyBaseLogger = deps.logger;
+  const app = Fastify({ loggerInstance });
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 

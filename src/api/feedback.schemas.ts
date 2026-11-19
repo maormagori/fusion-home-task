@@ -41,7 +41,7 @@ export type FeedbackListResponse = z.infer<typeof feedbackListResponseSchema>;
 
 export const retryFeedbackResponseSchema = z.object({
   id: z.string(),
-  status: z.literal('RECEIVED'),
+  status: z.literal(feedbackStatusSchema.enum.RECEIVED),
 });
 export type RetryFeedbackResponse = z.infer<typeof retryFeedbackResponseSchema>;
 
