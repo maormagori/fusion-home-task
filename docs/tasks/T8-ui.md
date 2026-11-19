@@ -12,18 +12,31 @@ typography, spacing, status-badge colors, and light/dark support. Record what it
 ## Files you own
 `web/` (everything inside), `vite.config.ts` or `web/vite.config.ts`, `web/tsconfig.json`,
 `package.json` (scripts + dependencies only), `package-lock.json`, `.github/workflows/ci.yml` (add one build step),
-`src/api/app.ts` (only to serve the built UI, see below), `test/api/static-ui.test.ts`.
+`src/api/app.ts` (only to serve the built UI, see below), `src/api/feedback.routes.ts` + `src/api/feedback.schemas.ts`
+(only the `GET /config` route and its schema), `test/api/static-ui.test.ts`, `test/api/config.test.ts`.
 
 ## Stack
 - Vite + React + TypeScript, dependencies in the **root** `package.json` (one `npm install` for everything).
 - Plain CSS (one stylesheet with CSS variables for the theme). No Tailwind, no UI kit.
-- Types come from the backend: `import type` from `src/api/feedback.schemas.ts` (and `src/domain/types.ts`).
-  Never redefine an API shape in the UI. No server code may end up in the bundle (type-only imports).
 - `fetch` wrapped in one small `web/src/api.ts` module (one function per endpoint).
+
+## Single source of models (hard rule)
+The backend owns every model; the UI only imports them.
+- Request/response types: `import type` from `src/api/feedback.schemas.ts` (`z.infer` of the route schemas) and
+  `src/domain/types.ts`. `web/src/api.ts` functions are typed with these, e.g. `Promise<FeedbackDetail>`.
+- Runtime values come from the backend too: status filter options and badges iterate `FEEDBACK_STATUSES`; sentiment
+  values come from `analysisResultSchema`. No string literal list of statuses or sentiments in `web/`.
+- `MAX_CONTENT_LENGTH` is server config, so the UI must not hard-code it: add `GET /config` → `{ maxContentLength }`
+  (response schema in `feedback.schemas.ts`, route in `feedback.routes.ts`, value from `buildApp` deps) and the
+  form reads it from there.
+- `web/` contains **no** `interface` or `type` describing feedback, attempts, analysis, statuses, or API bodies.
+  UI-only types (component props, local view state) are fine. The manager checks this in review.
+- Only modules with no server-only imports (no db, Fastify, openai, node:*) may be imported at runtime; Vite will
+  fail the build otherwise, which is the check.
 
 ## Behavior
 1. **Submit form:** textarea + submit button; shows the `MAX_CONTENT_LENGTH` limit as a character counter
-   (hard-code 5000 in one named constant); disables the button while sending.
+   (limit read from `GET /config`); disables the button while sending.
    On 202 → "Submitted, analyzing…". On 200 duplicate → "This feedback was already submitted" and highlight that item.
    On 400 → show the error message from the API.
 2. **List:** newest first, from `GET /feedback`. Each row: content preview, status badge
