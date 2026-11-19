@@ -46,6 +46,7 @@ Node 24, TypeScript (ESM, `"type": "module"`, strict), Fastify + `fastify-type-p
 ```
 src/
   config.ts                     loadConfig(): Config (Zod-validated env)
+  logger.ts                     createLogger(level): Logger (the only logger; pino)
   domain/types.ts               shared types (below)
   db/schema.ts                  Drizzle tables
   db/database.ts                openDatabase(path) → runs migrations from ./drizzle
@@ -151,18 +152,22 @@ export function analyzeOnce(llm: LlmClient, messages: ChatMessage[]): Promise<At
 ```
 
 ```ts
+// logger.ts — one pino logger, created once in server.ts and passed down as a dependency
+export type Logger = pino.Logger;
+export function createLogger(level: Config['LOG_LEVEL']): Logger;   // tests use createLogger('silent')
+
 // queue/analysis-queue.ts
 export interface AnalysisQueue { enqueue(feedbackId: string): void; onIdle(): Promise<void>; }
 export function createAnalysisQueue(concurrency: number,
-  process: (feedbackId: string) => Promise<void>): AnalysisQueue;
+  process: (feedbackId: string) => Promise<void>, logger: Logger): AnalysisQueue;
 
-// queue/analysis-worker.ts
+// queue/analysis-worker.ts — never rejects: unexpected errors end the item in FAILED
 export function processFeedback(feedbackId: string,
-  deps: { repo: FeedbackRepository; llm: LlmClient; maxAttempts: number }): Promise<void>;
+  deps: { repo: FeedbackRepository; llm: LlmClient; maxAttempts: number; logger: Logger }): Promise<void>;
 
-// api/app.ts
+// api/app.ts — Fastify uses the same logger (`loggerInstance`), so request logs and app logs share format and level
 export function buildApp(deps: { repo: FeedbackRepository; enqueue: (id: string) => void;
-                                  maxContentLength: number; logLevel: Config['LOG_LEVEL'] }): FastifyInstance;
+                                  maxContentLength: number; logger: Logger }): FastifyInstance;
 ```
 
 ## State rules (do not break these)
@@ -212,6 +217,12 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - No file-header comments, no comments restating a function or variable name, no JSDoc on obvious functions.
 - No commented-out code, no TODOs without a note in your ai-notes.
 
+**Logging**
+- Use the injected `Logger` only. **No `console.*` anywhere** in `src/` (tests and scripts included unless printing is the point).
+- Structured fields, short message: `logger.info({ feedbackId, attemptNumber }, 'Analysis attempt failed')`.
+- Levels: `info` for state changes (claimed, DONE, FAILED, recovery), `warn` for a failed attempt that will be retried,
+  `error` for unexpected errors. Never log full feedback content or raw LLM responses (they are in the DB).
+
 **Errors**
 - `try/catch` only where an error is turned into a value (`analyzeOnce`, the worker loop, the queue's job wrapper). Elsewhere let errors throw.
 - Error messages say what failed and with which id/value.
@@ -256,6 +267,18 @@ Before committing, re-read your diff as a reviewer and simplify anything you had
   **How to verify:** the exact commands or tests that prove it works.
   ```
   Then the rest of the description (what changed, test results).
+
+### Addressing review comments
+
+When the manager says the owner left comments on your PR:
+1. Read all of them: inline review comments with `gh api repos/{owner}/{repo}/pulls/<n>/comments` and general ones
+   with `gh pr view <n> --comments`.
+2. For each comment, either fix it or, if you disagree, reply with a short reason. Never ignore one silently.
+   If a comment asks for something outside your file list or changes a contract, ask the manager first.
+3. Push the fixes to the same branch (new commits, no force-push), reply under each comment with what changed
+   (`gh api …/pulls/<n>/comments/<id>/replies -f body=…` for inline comments, `gh pr comment <n>` for general ones),
+   update the TL;DR if the approach changed, and wait for green CI.
+4. Report with worker_done: one line per comment (fixed / replied, and how).
 
 ## AI notes (input for the README's AI Collaboration Log)
 
