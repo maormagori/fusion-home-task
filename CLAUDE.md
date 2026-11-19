@@ -46,6 +46,7 @@ Node 24, TypeScript (ESM, `"type": "module"`, strict), Fastify + `fastify-type-p
 ```
 src/
   config.ts                     loadConfig(): Config (Zod-validated env)
+  logger.ts                     createLogger(level): Logger (the only logger; pino)
   domain/types.ts               shared types (below)
   db/schema.ts                  Drizzle tables
   db/database.ts                openDatabase(path) → runs migrations from ./drizzle
@@ -151,18 +152,22 @@ export function analyzeOnce(llm: LlmClient, messages: ChatMessage[]): Promise<At
 ```
 
 ```ts
+// logger.ts — one pino logger, created once in server.ts and passed down as a dependency
+export type Logger = pino.Logger;
+export function createLogger(level: Config['LOG_LEVEL']): Logger;   // tests use createLogger('silent')
+
 // queue/analysis-queue.ts
 export interface AnalysisQueue { enqueue(feedbackId: string): void; onIdle(): Promise<void>; }
 export function createAnalysisQueue(concurrency: number,
-  process: (feedbackId: string) => Promise<void>): AnalysisQueue;
+  process: (feedbackId: string) => Promise<void>, logger: Logger): AnalysisQueue;
 
-// queue/analysis-worker.ts
+// queue/analysis-worker.ts — never rejects: unexpected errors end the item in FAILED
 export function processFeedback(feedbackId: string,
-  deps: { repo: FeedbackRepository; llm: LlmClient; maxAttempts: number }): Promise<void>;
+  deps: { repo: FeedbackRepository; llm: LlmClient; maxAttempts: number; logger: Logger }): Promise<void>;
 
-// api/app.ts
+// api/app.ts — Fastify uses the same logger (`loggerInstance`), so request logs and app logs share format and level
 export function buildApp(deps: { repo: FeedbackRepository; enqueue: (id: string) => void;
-                                  maxContentLength: number; logLevel: Config['LOG_LEVEL'] }): FastifyInstance;
+                                  maxContentLength: number; logger: Logger }): FastifyInstance;
 ```
 
 ## State rules (do not break these)
@@ -211,6 +216,12 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
   (e.g. why a conditional UPDATE, why we don't repair JSON). Never comment *what* the code does.
 - No file-header comments, no comments restating a function or variable name, no JSDoc on obvious functions.
 - No commented-out code, no TODOs without a note in your ai-notes.
+
+**Logging**
+- Use the injected `Logger` only. **No `console.*` anywhere** in `src/` (tests and scripts included unless printing is the point).
+- Structured fields, short message: `logger.info({ feedbackId, attemptNumber }, 'Analysis attempt failed')`.
+- Levels: `info` for state changes (claimed, DONE, FAILED, recovery), `warn` for a failed attempt that will be retried,
+  `error` for unexpected errors. Never log full feedback content or raw LLM responses (they are in the DB).
 
 **Errors**
 - `try/catch` only where an error is turned into a value (`analyzeOnce`, the worker loop, the queue's job wrapper). Elsewhere let errors throw.
