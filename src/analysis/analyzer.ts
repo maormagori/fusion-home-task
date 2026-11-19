@@ -1,18 +1,19 @@
 import { z } from 'zod';
 import { analysisResultSchema, type AnalysisResult } from '@feedback/shared/analysis';
-import type { ChatMessage, LlmClient } from './llm-client.js';
+import { LlmCallError, type ChatMessage, type LlmClient } from './llm-client.js';
 
 export type AttemptOutcome =
   | { kind: 'success'; raw: string; result: AnalysisResult }
   | { kind: 'invalid_output'; raw: string; error: string }
-  | { kind: 'llm_error'; error: string };
+  | { kind: 'llm_error'; error: string; retryable: boolean };
 
 export async function analyzeOnce(llm: LlmClient, messages: ChatMessage[]): Promise<AttemptOutcome> {
   let raw: string;
   try {
     raw = await llm.complete(messages);
   } catch (error) {
-    return { kind: 'llm_error', error: errorMessage(error) };
+    const retryable = error instanceof LlmCallError ? error.retryable : true;
+    return { kind: 'llm_error', error: errorMessage(error), retryable };
   }
 
   const validation = validateRawOutput(raw);

@@ -31,8 +31,9 @@ revisit, and the **decision** (fix now / document / reject). Review findings ref
 
 | # | Severity | Finding | Proposed decision | Why |
 |---|---|---|---|---|
-| 1 | medium | List/detail aggregate the whole attempt history even for one item or `limit=1`; no index for the list order | **Fix now (small version):** aggregate only the page's / the item's IDs, add an index on `created_at` | Cheap; reads are polled by the UI; scales with history otherwise |
+| 1 | medium | List/detail aggregate the whole attempt history even for one item or `limit=1`; no index for the list order | **DOCUMENT:** deferred for assignment scale and time budget; shared-models work will touch this area | Cheap; reads are polled by the UI; scales with history otherwise |
 | 2 | medium | No deterministic test of the correction loop through the worker | **Covered by T6b** (scripted server, A01–A04, T05) | Already in flight |
-| 3 | low | Permanent provider errors (404 model, 401 key) burn all attempts | **Fix now** if cheap: classify `llm_error` as retryable / permanent; permanent → FAILED immediately | One-line config mistakes otherwise multiply calls; good AI-integration signal for graders |
-| 4 | low | Whitespace-only `title` / `actionable_insight` pass validation | **Fix now:** `.trim().min(1)` in the output schema | One-line, closes a validation gap |
+| 3 | low | Permanent provider errors (404 model, 401 key) burn all attempts | **FIX done:** permanent HTTP errors persist one failed call and stop; transient errors retain bounded retries | One-line config mistakes otherwise multiply calls; good AI-integration signal for graders |
+| 4 | low | Whitespace-only `title` / `actionable_insight` pass validation | **FIX done:** `.trim().min(1)` rejects blank titles and insights; raw responses remain unchanged | One-line, closes a validation gap |
+| X1 | low | `completeAnalysis` depends on `this`, so destructured calls fail | **FIX done:** call named inner `transition` / `recordAttempt` functions; transaction and rejected-claim behavior tested | Factory methods should work without a receiver |
 | — | rule | "Status only via `transition()`" contradicted by bulk `resetInterruptedAnalyses` | **Document** the startup-recovery exception in CLAUDE.md | Rule wording, not a bug |

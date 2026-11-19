@@ -70,7 +70,7 @@ describe('analyzeOnce', () => {
 
     const outcome = await analyzeOnce(llm, buildInitialMessages('The app crashes.'));
 
-    expect(outcome.kind).toBe('llm_error');
+    expect(outcome).toMatchObject({ kind: 'llm_error', retryable: true });
   });
 });
 

@@ -63,13 +63,16 @@ async function analyzeClaimedFeedback(feedbackId: string, deps: AnalysisWorkerDe
     }
 
     const { attemptNumber } = recordOutcome(repo, feedbackId, outcome);
+    if (outcome.kind === 'llm_error' && !outcome.retryable) {
+      break;
+    }
     if (attempt < maxAttempts) {
       logger.warn({ feedbackId, attemptNumber, kind: outcome.kind, error: latestError }, 'Analysis attempt failed, retrying');
     }
   }
 
   repo.transition(feedbackId, ANALYZING, FAILED, { lastError: latestError });
-  logger.info({ feedbackId, maxAttempts, lastError: latestError }, 'Feedback analysis failed after all attempts');
+  logger.info({ feedbackId, maxAttempts, lastError: latestError }, 'Feedback analysis failed');
 }
 
 function recordOutcome(
