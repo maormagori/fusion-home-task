@@ -245,12 +245,21 @@ Before committing, re-read your diff as a reviewer and simplify anything you had
   git fetch origin && git rebase origin/home-task-orchestration-plan   # pick up merged tasks first
   npm run typecheck && npm test
   git push -u origin task/T<n>-<short-name>
-  gh pr create --base home-task-orchestration-plan --title "T<n>: <title>" --body "<what changed, how it was tested>"
+  gh pr create --base home-task-orchestration-plan --title "T<n>: <title>" --body-file <file>   # body format below
   gh pr checks --watch                                                  # CI must be green
   ```
 - CI (`.github/workflows/ci.yml`) runs typecheck + `npm test` on the PR merged with its base, so it checks that your
   task works **together with** everything already merged. LLM tests are not in CI; run `npm run test:llm` locally.
 - Do not merge your PR. The manager reviews it; the owner merges it.
+- The PR description **starts with a TL;DR** so the owner can follow it without reading your brief:
+  ```markdown
+  ## TL;DR
+  **Asked to solve:** 1–2 plain sentences: what the task had to deliver and why it matters in the system.
+  **How I went about it:** 3–5 bullets: the approach and key design choices, naming the files.
+  **Decisions / tradeoffs:** anything the brief did not decide, or anything a reviewer might question.
+  **How to verify:** the exact commands or tests that prove it works.
+  ```
+  Then the rest of the description (what changed, test results).
 
 ## AI notes (input for the README's AI Collaboration Log)
 
