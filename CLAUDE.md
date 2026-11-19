@@ -217,6 +217,19 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - No file-header comments, no comments restating a function or variable name, no JSDoc on obvious functions.
 - No commented-out code, no TODOs without a note in your ai-notes.
 
+**No hard-coded strings when a source of truth exists**
+- If a value is defined somewhere (a schema, a constant, config), import it. Never retype it as a string or number literal.
+  - Statuses: `feedbackStatusSchema.enum.DONE`, not `'DONE'`. Lists of statuses: `FEEDBACK_STATUSES`.
+  - Sentiments and other enum values: from their Zod schema (`analysisResultSchema.shape.sentiment.enum`).
+  - Config values (URLs, limits, model names, ports): from `Config`, also in tests (use the test config helper).
+  - HTTP status codes: named constants in one place, not bare `404`/`409` sprinkled through routes and tests.
+  - Error messages the API returns: exported constants, so tests assert against the same constant.
+  - Route paths used in more than one place: one constant.
+- Fine as literals: log messages, one-off error text, test names, and discriminated-union tags inside a `switch`
+  (the compiler already checks those against the type).
+- When a value has no source of truth yet but is used in 2+ places, create one (a named constant or schema) instead
+  of repeating the literal.
+
 **Logging**
 - Use the injected `Logger` only. **No `console.*` anywhere** in `src/` (tests and scripts included unless printing is the point).
 - Structured fields, short message: `logger.info({ feedbackId, attemptNumber }, 'Analysis attempt failed')`.
