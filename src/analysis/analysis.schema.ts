@@ -1,4 +1,3 @@
-// The shape every LLM answer must match. Strict objects reject extra keys, so the model cannot add fields.
 import { z } from 'zod';
 
 export const analysisResultSchema = z.strictObject({

@@ -1,4 +1,3 @@
-// Reads and validates environment variables once at startup. Defaults match docs/ARCHITECTURE.md §7.
 import { z } from 'zod';
 
 const configSchema = z.object({
@@ -16,7 +15,6 @@ const configSchema = z.object({
 
 export type Config = z.infer<typeof configSchema>;
 
-// Throws a ZodError naming every invalid variable, so a bad env stops the server before it starts.
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return configSchema.parse(env);
 }

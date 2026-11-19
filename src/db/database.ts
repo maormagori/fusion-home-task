@@ -1,4 +1,3 @@
-// Opens the SQLite database and applies the migrations in ./drizzle. Called once by server.ts and by tests.
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import BetterSqlite3 from 'better-sqlite3';
