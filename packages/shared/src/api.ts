@@ -1,0 +1,74 @@
+import { z } from 'zod';
+import { feedbackStatusSchema, feedbackViewSchema } from '@feedback/shared/models';
+
+export const FEEDBACK_PATH = '/feedback';
+export const FEEDBACK_DETAIL_PATH = `${FEEDBACK_PATH}/:id`;
+export const FEEDBACK_RETRY_PATH = `${FEEDBACK_DETAIL_PATH}/retry`;
+export const CONFIG_PATH = '/config';
+
+export function feedbackDetailUrl(id: string): string {
+  return FEEDBACK_DETAIL_PATH.replace(':id', encodeURIComponent(id));
+}
+
+export function feedbackRetryUrl(id: string): string {
+  return FEEDBACK_RETRY_PATH.replace(':id', encodeURIComponent(id));
+}
+
+export const DEFAULT_LIST_LIMIT = 20;
+export const MAX_LIST_LIMIT = 100;
+
+// The max length is a server setting (MAX_CONTENT_LENGTH), so the body schema is built from it.
+export function createSubmitFeedbackBodySchema(
+  maxContentLength: number,
+): z.ZodObject<{ content: z.ZodString }> {
+  return z.object({
+    content: z.string().trim().min(1).max(maxContentLength),
+  });
+}
+export type SubmitFeedbackBody = z.infer<ReturnType<typeof createSubmitFeedbackBodySchema>>;
+
+export const listFeedbackQuerySchema = z.object({
+  status: feedbackStatusSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_LIST_LIMIT).default(DEFAULT_LIST_LIMIT),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+export type ListFeedbackQuery = z.infer<typeof listFeedbackQuerySchema>;
+
+export const feedbackIdParamsSchema = z.object({
+  id: z.string().min(1),
+});
+
+export const submitFeedbackResponseSchema = z.object({
+  id: z.string(),
+  status: feedbackStatusSchema,
+  duplicate: z.boolean(),
+});
+export type SubmitFeedbackResponse = z.infer<typeof submitFeedbackResponseSchema>;
+
+export const feedbackListResponseSchema = z.object({
+  items: z.array(feedbackViewSchema),
+  limit: z.number().int(),
+  offset: z.number().int(),
+});
+export type FeedbackListResponse = z.infer<typeof feedbackListResponseSchema>;
+
+export const retryFeedbackResponseSchema = z.object({
+  id: z.string(),
+  status: z.literal(feedbackStatusSchema.enum.RECEIVED),
+});
+export type RetryFeedbackResponse = z.infer<typeof retryFeedbackResponseSchema>;
+
+export const errorResponseSchema = z.object({
+  error: z.string(),
+});
+export type ErrorResponse = z.infer<typeof errorResponseSchema>;
+
+export const retryConflictResponseSchema = errorResponseSchema.extend({
+  status: feedbackStatusSchema,
+});
+export type RetryConflictResponse = z.infer<typeof retryConflictResponseSchema>;
+
+export const configResponseSchema = z.object({
+  maxContentLength: z.number().int(),
+});
+export type ConfigResponse = z.infer<typeof configResponseSchema>;
