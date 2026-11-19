@@ -12,7 +12,10 @@ flowchart LR
     T3 --> T5
     T4 --> T6[T6 End-to-end + fixes]
     T5 --> T6
+    T4 --> T8[T8 Minimal UI]
+    T5 --> T8
     T6 --> T7[T7 README + AI log]
+    T8 --> T7
 ```
 
 | Task | Brief | Depends on | Est. |
@@ -23,7 +26,8 @@ flowchart LR
 | T4 | [HTTP API](T4-api.md) | T2 | 25m |
 | T5 | [Queue, worker, server](T5-queue-worker.md) | T2, T3 | 35m |
 | T6 | [End-to-end + fixes](T6-e2e.md) | T4, T5 | 25m |
-| T7 | [README + AI Collaboration Log](T7-readme.md) | T6 | 20m (manager + owner) |
+| T8 | [Minimal UI](T8-ui.md) (uses `ui-ux-pro-max`) | T4, T5 (parallel with T6) | 35m |
+| T7 | [README + AI Collaboration Log](T7-readme.md) | T6, T8 | 20m (manager + owner) |
 
 Every worker: read `CLAUDE.md`, `docs/ARCHITECTURE.md`, and your brief. Stay inside your file list.
 Done means: `npm run typecheck` and `npm test` pass locally (plus `npm run test:llm` where the brief says so),

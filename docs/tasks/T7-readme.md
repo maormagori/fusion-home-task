@@ -10,7 +10,7 @@ because it needs the full story of the session.
 1. What it is (2–3 lines).
 2. **Setup:** Node 24, Ollama + `ollama pull qwen2.5:7b-instruct`, `npm install`, `cp .env.example .env`, `npm run dev`;
    switching to OpenAI (3 env vars); running tests (`npm test`, `npm run test:llm`).
-3. **API** with curl examples (from `scripts/smoke.sh`).
+3. **API** with curl examples (from `scripts/smoke.sh`), and how to run the UI (`npm run web:dev` / `web:build`) with a screenshot from `docs/screenshots/`.
 4. **Design decisions and tradeoffs**: short summary linking to `docs/ARCHITECTURE.md` — state machine with conditional
    transitions, FAILED as DLQ, two kinds of retry (transport vs correction), why dedup, concurrency in one place,
    OpenAI-compatible client, what was left out and why.

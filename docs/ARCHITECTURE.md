@@ -205,6 +205,6 @@ and a FAILED duplicate is returned as FAILED rather than re-analyzed, so the cal
 - In-process queue: jobs live in memory; startup recovery covers crashes, but there is no multi-instance support.
 - Content over `MAX_CONTENT_LENGTH` is rejected, not truncated.
 - Concurrency is fixed per process. Adaptive concurrency (back off on 429s) is future work.
-- No auth, no UI, no deployment config (explicitly out of scope).
+- No auth, no deployment config (explicitly out of scope). The UI is a minimal Vite + React page (`web/`) built on the API's Zod schemas; served by Fastify when built.
 - Tests that need the LLM call the real local Ollama. They are slower and not deterministic, so the
   correction path is unit-tested on the pure functions (validation, correction message), not by forcing a bad model output.
