@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeOnce, validateRawOutput } from '../../src/analysis/analyzer.js';
 import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
 import { buildInitialMessages } from '../../src/analysis/prompt.js';
-import { loadConfig } from '../../src/config.js';
+import { createUnreachableLlmTestConfig } from '../helpers/test-config.js';
 
 const validResult = {
   sentiment: 'negative',
@@ -64,8 +64,7 @@ describe('validateRawOutput', () => {
 
 describe('analyzeOnce', () => {
   it('returns llm_error when the LLM cannot be reached', async () => {
-    const unreachableConfig = loadConfig({ LLM_BASE_URL: 'http://127.0.0.1:9/v1', LLM_SDK_MAX_RETRIES: '0' });
-    const llm = createOpenAiLlmClient(unreachableConfig);
+    const llm = createOpenAiLlmClient(createUnreachableLlmTestConfig());
 
     const outcome = await analyzeOnce(llm, buildInitialMessages('The app crashes.'));
 
