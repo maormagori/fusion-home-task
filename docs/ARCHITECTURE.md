@@ -182,6 +182,7 @@ process), then enqueue every `RECEIVED` item. Without this, an in-process queue 
 
 | Env var | Default | Purpose |
 |---|---|---|
+| `LOG_LEVEL` | `info` | Pino log level: fatal, error, warn, info, debug, trace, or silent |
 | `PORT` | `3000` | HTTP port |
 | `DB_PATH` | `./data/feedback.db` | SQLite file |
 | `LLM_BASE_URL` | `http://localhost:11434/v1` | Ollama, or `https://api.openai.com/v1` |

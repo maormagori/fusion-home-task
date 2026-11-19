@@ -1,33 +1,39 @@
-import type { AnalysisResult } from '../analysis/analysis.schema.js';
+import { z } from 'zod';
+import { analysisResultSchema } from '../analysis/analysis.schema.js';
 
 export const FEEDBACK_STATUSES = ['RECEIVED', 'ANALYZING', 'DONE', 'FAILED'] as const;
-export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
+export const feedbackStatusSchema = z.enum(FEEDBACK_STATUSES);
+export type FeedbackStatus = z.infer<typeof feedbackStatusSchema>;
 
-export interface Feedback {
-  id: string;                 // uuid
-  content: string;
-  contentHash: string;
-  status: FeedbackStatus;
-  lastError: string | null;
-  createdAt: string;          // ISO 8601
-  updatedAt: string;
-}
+export const feedbackSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  contentHash: z.string(),
+  status: feedbackStatusSchema,
+  lastError: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Feedback = z.infer<typeof feedbackSchema>;
 
-export interface AnalysisAttempt {
-  id: number;
-  feedbackId: string;
-  attemptNumber: number;      // 1, 2, 3… across the item's whole lifetime
-  rawResponse: string | null; // null only when the LLM call itself failed
-  result: AnalysisResult | null; // set only when validation passed
-  error: string | null;
-  createdAt: string;
-}
+export const analysisAttemptSchema = z.object({
+  id: z.number().int(),
+  feedbackId: z.string(),
+  attemptNumber: z.number().int(),
+  rawResponse: z.string().nullable(),
+  result: analysisResultSchema.nullable(),
+  error: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type AnalysisAttempt = z.infer<typeof analysisAttemptSchema>;
 
-export interface FeedbackView extends Feedback {
-  attemptCount: number;
-  analysis: AnalysisResult | null; // non-null only when status === 'DONE'
-}
+export const feedbackViewSchema = feedbackSchema.extend({
+  attemptCount: z.number().int(),
+  analysis: analysisResultSchema.nullable(),
+});
+export type FeedbackView = z.infer<typeof feedbackViewSchema>;
 
-export interface FeedbackDetail extends FeedbackView {
-  attempts: AnalysisAttempt[];     // ordered by attemptNumber
-}
+export const feedbackDetailSchema = feedbackViewSchema.extend({
+  attempts: z.array(analysisAttemptSchema),
+});
+export type FeedbackDetail = z.infer<typeof feedbackDetailSchema>;

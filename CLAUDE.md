@@ -70,38 +70,27 @@ test/                           mirrors src/, e.g. test/feedback/feedback.reposi
 These are the agreed interfaces between modules. T1 creates the types; later tasks implement them.
 
 ```ts
-// domain/types.ts
+// domain/types.ts — model fields defined once in Zod
 export const FEEDBACK_STATUSES = ['RECEIVED', 'ANALYZING', 'DONE', 'FAILED'] as const;
-export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
-
-export interface Feedback {
-  id: string;                 // uuid
-  content: string;
-  contentHash: string;
-  status: FeedbackStatus;
-  lastError: string | null;
-  createdAt: string;          // ISO 8601
-  updatedAt: string;
-}
-
-export interface AnalysisAttempt {
-  id: number;
-  feedbackId: string;
-  attemptNumber: number;      // 1, 2, 3… across the item's whole lifetime
-  rawResponse: string | null; // null only when the LLM call itself failed
-  result: AnalysisResult | null; // set only when validation passed
-  error: string | null;
-  createdAt: string;
-}
-
-export interface FeedbackView extends Feedback {
-  attemptCount: number;
-  analysis: AnalysisResult | null; // non-null only when status === 'DONE'
-}
-
-export interface FeedbackDetail extends FeedbackView {
-  attempts: AnalysisAttempt[];     // ordered by attemptNumber
-}
+export const feedbackStatusSchema = z.enum(FEEDBACK_STATUSES);
+export const feedbackSchema = z.object({
+  id: z.string(), content: z.string(), contentHash: z.string(), status: feedbackStatusSchema,
+  lastError: z.string().nullable(), createdAt: z.string(), updatedAt: z.string(),
+});
+export const analysisAttemptSchema = z.object({
+  id: z.number().int(), feedbackId: z.string(), attemptNumber: z.number().int(),
+  rawResponse: z.string().nullable(), result: analysisResultSchema.nullable(),
+  error: z.string().nullable(), createdAt: z.string(),
+});
+export const feedbackViewSchema = feedbackSchema.extend({
+  attemptCount: z.number().int(), analysis: analysisResultSchema.nullable(),
+});
+export const feedbackDetailSchema = feedbackViewSchema.extend({ attempts: z.array(analysisAttemptSchema) });
+export type FeedbackStatus = z.infer<typeof feedbackStatusSchema>;
+export type Feedback = z.infer<typeof feedbackSchema>;
+export type AnalysisAttempt = z.infer<typeof analysisAttemptSchema>;
+export type FeedbackView = z.infer<typeof feedbackViewSchema>;
+export type FeedbackDetail = z.infer<typeof feedbackDetailSchema>;
 ```
 
 ```ts
@@ -208,6 +197,7 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - No `any`, no `as` casts except at a parsing boundary with a comment. No non-null `!` assertions.
 - Prefer simple types and interfaces; avoid advanced generics, conditional or mapped types.
 - Let Zod infer types instead of writing the same shape twice.
+- Models are defined once as Zod schemas; TypeScript types are `z.infer` of them. Never write an interface that repeats a schema.
 
 **Comments**
 - **Add code comments only when necessary.** Clear names and small functions should explain the code on their own.

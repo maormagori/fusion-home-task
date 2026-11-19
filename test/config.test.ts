@@ -4,6 +4,7 @@ import { loadConfig } from '../src/config.js';
 describe('loadConfig', () => {
   it('returns the documented defaults for an empty env', () => {
     expect(loadConfig({})).toEqual({
+      LOG_LEVEL: 'info',
       PORT: 3000,
       DB_PATH: './data/feedback.db',
       LLM_BASE_URL: 'http://localhost:11434/v1',
