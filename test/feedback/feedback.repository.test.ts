@@ -1,6 +1,8 @@
+import { sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { analysisAttempts } from '../../src/db/schema.js';
 import { feedbackStatusSchema } from '../../src/domain/types.js';
-import { IN_MEMORY_PATH, openDatabase } from '../../src/db/database.js';
+import { IN_MEMORY_PATH, openDatabase, type Database } from '../../src/db/database.js';
 import { createFeedbackRepository, type FeedbackRepository } from '../../src/feedback/feedback.repository.js';
 import { sentimentSchema, type AnalysisResult } from '../../src/analysis/analysis.schema.js';
 
@@ -11,9 +13,11 @@ const VALID_RESULT: AnalysisResult = {
 };
 
 let repo: FeedbackRepository;
+let db: Database;
 
 beforeEach(() => {
-  repo = createFeedbackRepository(openDatabase(IN_MEMORY_PATH));
+  db = openDatabase(IN_MEMORY_PATH);
+  repo = createFeedbackRepository(db);
 });
 
 function insertFeedback(content: string): string {
@@ -26,8 +30,7 @@ function recordFailedAttempt(feedbackId: string): void {
 
 function markDone(feedbackId: string): void {
   repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING);
-  repo.recordAttempt({ feedbackId, rawResponse: JSON.stringify(VALID_RESULT), result: VALID_RESULT, error: null });
-  repo.transition(feedbackId, feedbackStatusSchema.enum.ANALYZING, feedbackStatusSchema.enum.DONE, { lastError: null });
+  repo.completeAnalysis({ feedbackId, rawResponse: JSON.stringify(VALID_RESULT), result: VALID_RESULT });
 }
 
 describe('insertOrGetExisting', () => {
@@ -206,5 +209,68 @@ describe('listIdsByStatus', () => {
 
     expect(repo.listIdsByStatus(feedbackStatusSchema.enum.RECEIVED)).toEqual([firstId, lastId]);
     expect(repo.listIdsByStatus(feedbackStatusSchema.enum.DONE)).toEqual([doneId]);
+  });
+});
+
+describe('completeAnalysis', () => {
+  it('stores the successful attempt and sets DONE with lastError cleared', () => {
+    const feedbackId = insertFeedback('Complete this analysis');
+    recordFailedAttempt(feedbackId);
+    repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING,
+      { lastError: 'previous failure' });
+
+    const completion = repo.completeAnalysis({
+      feedbackId, rawResponse: JSON.stringify(VALID_RESULT), result: VALID_RESULT,
+    });
+
+    expect(completion).toEqual({ completed: true, attempt: expect.objectContaining({
+      feedbackId, attemptNumber: 2, rawResponse: JSON.stringify(VALID_RESULT), result: VALID_RESULT, error: null,
+    }) });
+    expect(repo.getDetail(feedbackId)).toMatchObject({
+      status: feedbackStatusSchema.enum.DONE, lastError: null, attemptCount: 2, analysis: VALID_RESULT,
+    });
+  });
+
+  it.each([
+    feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.DONE, feedbackStatusSchema.enum.FAILED,
+  ])('stores nothing when the item is %s', (status) => {
+    const feedbackId = insertFeedback('Not analyzing');
+    repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, status, { lastError: 'keep this error' });
+    const before = repo.getDetail(feedbackId);
+
+    expect(repo.completeAnalysis({ feedbackId, rawResponse: 'raw', result: VALID_RESULT }))
+      .toEqual({ completed: false, attempt: null });
+    expect(repo.getDetail(feedbackId)).toEqual(before);
+  });
+
+  it('rolls back DONE if storing the attempt fails', () => {
+    const feedbackId = insertFeedback('Atomic completion');
+    repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING);
+    db.run(sql`CREATE TRIGGER reject_attempt BEFORE INSERT ON analysis_attempts
+      BEGIN SELECT RAISE(ABORT, 'attempt write failed'); END`);
+    const before = repo.getDetail(feedbackId);
+
+    expect(() => repo.completeAnalysis({ feedbackId, rawResponse: 'raw', result: VALID_RESULT })).toThrow();
+    expect(repo.getDetail(feedbackId)).toEqual(before);
+  });
+});
+
+describe('latest valid analysis', () => {
+  it('uses the highest valid attempt number in list and detail regardless of JSON or insertion order', () => {
+    const feedbackId = insertFeedback('Historical duplicate results');
+    const newerResult = { ...VALID_RESULT, actionable_insight: 'Add keyboard shortcuts.' };
+    const now = new Date().toISOString();
+    db.insert(analysisAttempts).values([
+      { feedbackId, attemptNumber: 2, rawResponse: JSON.stringify(newerResult),
+        resultJson: JSON.stringify(newerResult), error: null, createdAt: now },
+      { feedbackId, attemptNumber: 1, rawResponse: JSON.stringify(VALID_RESULT),
+        resultJson: JSON.stringify(VALID_RESULT), error: null, createdAt: now },
+      { feedbackId, attemptNumber: 3, rawResponse: '{}', resultJson: null, error: 'invalid', createdAt: now },
+    ]).run();
+    repo.transition(feedbackId, feedbackStatusSchema.enum.RECEIVED, feedbackStatusSchema.enum.ANALYZING);
+    repo.transition(feedbackId, feedbackStatusSchema.enum.ANALYZING, feedbackStatusSchema.enum.DONE);
+
+    expect(repo.list({ limit: 10, offset: 0 })[0]).toMatchObject({ attemptCount: 3, analysis: newerResult });
+    expect(repo.getDetail(feedbackId)).toMatchObject({ attemptCount: 3, analysis: newerResult });
   });
 });

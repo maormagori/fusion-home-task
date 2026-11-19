@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import OpenAI from 'openai';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { sentimentSchema } from '../../src/analysis/analysis.schema.js';
 import { analyzeOnce, validateRawOutput } from '../../src/analysis/analyzer.js';
 import { createOpenAiLlmClient } from '../../src/analysis/llm-client.js';
 import { buildInitialMessages } from '../../src/analysis/prompt.js';
-import { createUnreachableLlmTestConfig } from '../helpers/test-config.js';
+import { createTestConfig, createUnreachableLlmTestConfig } from '../helpers/test-config.js';
 
 const validResult = {
   sentiment: sentimentSchema.enum.negative,
@@ -70,5 +71,30 @@ describe('analyzeOnce', () => {
     const outcome = await analyzeOnce(llm, buildInitialMessages('The app crashes.'));
 
     expect(outcome.kind).toBe('llm_error');
+  });
+});
+
+describe('completion response content', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each([
+    { content: '', hasChoice: true, kind: 'invalid_output' },
+    { content: null, hasChoice: true, kind: 'llm_error' },
+    { content: null, hasChoice: false, kind: 'llm_error' },
+  ])('classifies content=$content with choice=$hasChoice as $kind', async ({ content, hasChoice, kind }) => {
+    const config = createTestConfig();
+    vi.spyOn(OpenAI.Chat.Completions.prototype, 'create').mockResolvedValue({
+      id: 'test-completion', object: 'chat.completion', created: 0, model: config.LLM_MODEL,
+      choices: hasChoice ? [{ index: 0, finish_reason: 'stop', logprobs: null,
+        message: { role: 'assistant', content, refusal: null } }] : [],
+    });
+    const llm = createOpenAiLlmClient(config);
+
+    const outcome = await analyzeOnce(llm, buildInitialMessages('The app crashes.'));
+
+    expect(outcome.kind).toBe(kind);
+    if (kind === 'invalid_output') {
+      expect(outcome).toMatchObject({ raw: '', error: expect.stringMatching(/^Response is not valid JSON:/) });
+    }
   });
 });

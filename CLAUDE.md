@@ -126,6 +126,8 @@ export interface FeedbackRepository {
   list(params: { status?: FeedbackStatus; limit: number; offset: number }): FeedbackView[];
   recordAttempt(input: { feedbackId: string; rawResponse: string | null;
                          result: AnalysisResult | null; error: string | null }): AnalysisAttempt;
+  completeAnalysis(input: { feedbackId: string; rawResponse: string; result: AnalysisResult }):
+    { attempt: AnalysisAttempt; completed: true } | { attempt: null; completed: false };
   resetInterruptedAnalyses(): number;          // ANALYZING → RECEIVED, returns count
   listIdsByStatus(status: FeedbackStatus): string[];
 }
@@ -174,11 +176,14 @@ export function buildApp(deps: { repo: FeedbackRepository; enqueue: (id: string)
 
 ## State rules (do not break these)
 
-- Status changes **only** through `repo.transition()`. No other code writes `feedback.status`.
+- Status changes go through repository methods: `transition()`, `completeAnalysis()`, and startup recovery.
 - Allowed transitions: `RECEIVED→ANALYZING`, `ANALYZING→DONE`, `ANALYZING→FAILED`,
   `FAILED→RECEIVED` (manual retry), `ANALYZING→RECEIVED` (startup recovery only).
 - The worker must win `RECEIVED→ANALYZING` before calling the LLM. If it loses, it returns without doing anything.
-- Every LLM call produces exactly one `analysis_attempts` row, valid or not.
+- A successful attempt and DONE are written in one transaction. `completeAnalysis()` returns completed false
+  and stores nothing when the item is not ANALYZING.
+- Every LLM call produces exactly one `analysis_attempts` row, valid or not, except when successful
+  completion is rejected because the item is no longer ANALYZING.
 - `ANALYZING→DONE` sets `lastError` to null. `ANALYZING→FAILED` sets `lastError` to the latest error.
 - FAILED is the DLQ. Nothing leaves FAILED except `POST /feedback/:id/retry`.
 
