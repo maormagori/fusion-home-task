@@ -1,5 +1,7 @@
 # T7 — README + AI Collaboration Log (manager + owner)
 
+**When:** last, after T8 (UI) is merged, so the README describes the finished project.
+
 **Goal:** the submission documents. Written by the manager with the owner, not by a fresh worker,
 because it needs the full story of the session.
 
