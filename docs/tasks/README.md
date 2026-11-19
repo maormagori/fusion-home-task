@@ -16,6 +16,8 @@ flowchart LR
     T6 --> T9[T9 Independent review]
     T9 --> T10[T10 Tradeoff session + fixes]
     T8 --> T10
+    T8 --> T11[T11 packages/shared]
+    T11 --> T7
     T10 --> T7[T7 README + AI log]
 ```
 
@@ -33,6 +35,7 @@ Codex (`gpt-6.1-sol`, medium effort) for T6, T9 (review), and follow-up fixes wh
 | T8 | [Minimal UI](T8-ui.md) (uses `ui-ux-pro-max`) | T6 (only once the backend is proven end to end) | 35m |
 | T9 | [Independent code review](T9-review.md) (read-only, Codex) | T6 (parallel with T8) | 25m |
 | T10 | [Tradeoff session + review fixes](T10-tradeoffs.md) | T9, T8 | 25m (manager + owner, fixes by workers) |
+| T11 | Move shared models to `packages/shared` (`@feedback/shared`), used by backend and `web/` | PR #9, e2e PR, T8 merged | 30–45m (Codex) |
 | T7 | [README + AI Collaboration Log](T7-readme.md) | T10 (written last, once everything is done) | 20m (manager + owner) |
 
 Every worker: read `CLAUDE.md`, `docs/ARCHITECTURE.md`, and your brief. Stay inside your file list.
