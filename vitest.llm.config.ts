@@ -1,4 +1,3 @@
-// Tests that call the real local Ollama model. Run with `npm run test:llm`; not part of CI.
 import { defineConfig } from 'vitest/config';
 
 const LLM_TEST_TIMEOUT_MS = 120_000;

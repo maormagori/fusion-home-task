@@ -1,4 +1,3 @@
-// Shared domain types used by every module. The shapes are the contracts listed in CLAUDE.md.
 import type { AnalysisResult } from '../analysis/analysis.schema.js';
 
 export const FEEDBACK_STATUSES = ['RECEIVED', 'ANALYZING', 'DONE', 'FAILED'] as const;

@@ -1,4 +1,3 @@
-// Drizzle table definitions. `npm run db:generate` turns changes here into SQL migrations in ./drizzle.
 import { sql } from 'drizzle-orm';
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { FEEDBACK_STATUSES } from '../domain/types.js';
