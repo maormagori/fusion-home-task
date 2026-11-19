@@ -57,6 +57,7 @@ src/
   analysis/analyzer.ts          validateRawOutput, analyzeOnce
   queue/analysis-queue.ts       createAnalysisQueue (p-queue)
   queue/analysis-worker.ts      processFeedback (retry + correction loop)
+  api/feedback.schemas.ts       Zod request + response schemas (the API contract; no server imports, UI-importable)
   api/feedback.routes.ts
   api/app.ts                    buildApp(deps)
   server.ts                     wiring, startup recovery, listen

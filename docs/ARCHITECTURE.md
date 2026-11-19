@@ -39,7 +39,7 @@ flowchart LR
 | `feedback/` | Repository: dedup insert, **conditional status transitions**, reads, attempt records | db, domain |
 | `analysis/` | Zod output schema, prompt builder, LLM client, `analyzeOnce()` → typed outcome | domain |
 | `queue/` | `AnalysisQueue` (p-queue wrapper) and `processFeedback()` worker (retry loop, state changes) | feedback, analysis |
-| `api/` | Fastify routes, `buildApp(deps)` | feedback, queue (only `enqueue`) |
+| `api/` | Fastify routes, `buildApp(deps)`, request + response Zod schemas (the API contract, importable by a future UI) | feedback, queue (only `enqueue`) |
 | `server.ts` | Wiring, startup recovery, listen | everything |
 
 Rule: `analysis/` never touches the DB; `api/` never calls the LLM. The worker is the only place that
