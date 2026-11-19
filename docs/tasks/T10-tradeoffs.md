@@ -11,7 +11,7 @@ Owner and manager go through the tradeoffs one at a time.
    in tests (scripted LLM server only for behavior the real model won't produce), LLM tests outside CI,
    Fastify body limit not derived from MAX_CONTENT_LENGTH (P03: owner chose document-only), crash recovery may repeat
    LLM work (at-least-once, not exactly-once).
-2. Owner and manager go through `docs/TRADEOFFS.md` next to `docs/reviews/code-review.md`. For each tradeoff and each
+2. Owner and manager go through `docs/TRADEOFFS.md`. For each tradeoff and each
    finding, decide: **fix now**, **document as known tradeoff**, or **reject** (with a reason).
 3. "Fix now" items go to workers (Codex where possible) as small PRs, following the normal flow (TL;DR, green CI, owner merges).
 4. Decisions are recorded in `docs/TRADEOFFS.md` and become the README's "Design decisions and tradeoffs" section in T7.

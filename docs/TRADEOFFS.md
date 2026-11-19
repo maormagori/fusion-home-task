@@ -1,7 +1,7 @@
 # Tradeoffs and review decisions
 
 Draft for the owner + manager session (T10). Each entry: what we chose, the alternatives, what it costs, when to
-revisit, and the **decision** (fix now / document / reject). Review findings refer to `docs/reviews/code-review.md` (T9).
+revisit, and the **decision** (fix now / document / reject).
 
 ## A. Tradeoffs taken during the build
 
