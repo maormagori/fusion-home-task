@@ -1,12 +1,16 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { StatusCodes } from 'http-status-codes';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { analysisResultSchema } from '../src/analysis/analysis.schema.js';
 import { createOpenAiLlmClient } from '../src/analysis/llm-client.js';
 import { buildApp } from '../src/api/app.js';
 import {
+  FEEDBACK_PATH,
+  feedbackDetailUrl,
   feedbackListResponseSchema,
+  feedbackRetryUrl,
   retryFeedbackResponseSchema,
   submitFeedbackResponseSchema,
 } from '../src/api/feedback.schemas.js';
@@ -19,9 +23,6 @@ import { processFeedback } from '../src/queue/analysis-worker.js';
 import { createTestConfig, createUnreachableLlmTestConfig } from './helpers/test-config.js';
 
 const { RECEIVED, ANALYZING, DONE, FAILED } = feedbackStatusSchema.enum;
-const FEEDBACK_PATH = '/feedback';
-const ACCEPTED = 202;
-const OK = 200;
 
 function createHarness() {
   const config = createTestConfig();
@@ -66,7 +67,7 @@ describe('HTTP through SQLite, queue, and real Ollama', () => {
     const feedbackIds: string[] = [];
     for (const content of contents) {
       const response = await harness.app.inject({ method: 'POST', url: FEEDBACK_PATH, payload: { content } });
-      expect(response.statusCode).toBe(ACCEPTED);
+      expect(response.statusCode).toBe(StatusCodes.ACCEPTED);
       const submitted = submitFeedbackResponseSchema.parse(response.json());
       expect(submitted).toMatchObject({ status: RECEIVED, duplicate: false });
       feedbackIds.push(submitted.id);
@@ -87,7 +88,7 @@ describe('HTTP through SQLite, queue, and real Ollama', () => {
     const duplicate = await harness.app.inject({
       method: 'POST', url: FEEDBACK_PATH, payload: { content: `  ${contents[0]?.toUpperCase()}  ` },
     });
-    expect(duplicate.statusCode).toBe(OK);
+    expect(duplicate.statusCode).toBe(StatusCodes.OK);
     expect(submitFeedbackResponseSchema.parse(duplicate.json())).toEqual({
       id: feedbackIds[0], status: DONE, duplicate: true,
     });
@@ -108,14 +109,14 @@ describe('HTTP through SQLite, queue, and real Ollama', () => {
       const submitted = await failedApp.inject({
         method: 'POST', url: FEEDBACK_PATH, payload: { content: 'Please add keyboard shortcuts for editing.' },
       });
-      expect(submitted.statusCode).toBe(ACCEPTED);
+      expect(submitted.statusCode).toBe(StatusCodes.ACCEPTED);
       feedbackId = submitFeedbackResponseSchema.parse(submitted.json()).id;
       await failedQueue.onIdle();
     } finally {
       await failedQueue.onIdle();
       await failedApp.close();
     }
-    const failureResponse = await app.inject({ method: 'GET', url: `${FEEDBACK_PATH}/${feedbackId}` });
+    const failureResponse = await app.inject({ method: 'GET', url: feedbackDetailUrl(feedbackId) });
     const failed = feedbackDetailSchema.parse(failureResponse.json());
     expect(failed.status).toBe(FAILED);
     expect(failed.analysis).toBeNull();
@@ -127,8 +128,8 @@ describe('HTTP through SQLite, queue, and real Ollama', () => {
     const dlqResponse = await app.inject({ method: 'GET', url: `${FEEDBACK_PATH}?status=${FAILED}` });
     expect(feedbackListResponseSchema.parse(dlqResponse.json()).items.map((item) => item.id)).toEqual([feedbackId]);
 
-    const retry = await app.inject({ method: 'POST', url: `${FEEDBACK_PATH}/${feedbackId}/retry` });
-    expect(retry.statusCode).toBe(ACCEPTED);
+    const retry = await app.inject({ method: 'POST', url: feedbackRetryUrl(feedbackId) });
+    expect(retry.statusCode).toBe(StatusCodes.ACCEPTED);
     expect(retryFeedbackResponseSchema.parse(retry.json())).toEqual({ id: feedbackId, status: RECEIVED });
     await harness.queue.onIdle();
     const done = await getDoneFeedback(feedbackId);
@@ -157,8 +158,8 @@ describe('HTTP through SQLite, queue, and real Ollama', () => {
 });
 
 async function getDoneFeedback(feedbackId: string) {
-  const response = await harness.app.inject({ method: 'GET', url: `${FEEDBACK_PATH}/${feedbackId}` });
-  expect(response.statusCode).toBe(OK);
+  const response = await harness.app.inject({ method: 'GET', url: feedbackDetailUrl(feedbackId) });
+  expect(response.statusCode).toBe(StatusCodes.OK);
   const detail = feedbackDetailSchema.parse(response.json());
   expect(detail.status).toBe(DONE);
   expect(detail.lastError).toBeNull();
