@@ -31,6 +31,9 @@ npm run typecheck    # tsc --noEmit
 npm test             # vitest run, excludes *.llm.test.ts (no Ollama needed)
 npm run test:llm     # vitest run on *.llm.test.ts only (needs local Ollama running)
 npm run db:generate  # drizzle-kit generate (after changing src/db/schema.ts)
+npm run web:dev      # Vite dev server for web/, proxies /feedback and /config to :3000
+npm run web:build    # builds web/dist; npm run dev then serves it at /
+npm run web:typecheck
 ```
 
 Local LLM: Ollama at `http://localhost:11434/v1`, model `qwen2.5:7b-instruct`.
@@ -61,9 +64,12 @@ src/
   queue/recovery.ts             recoverPendingAnalyses (startup reset + enqueue)
   api/feedback.schemas.ts       Zod request + response schemas (the API contract; no server imports, UI-importable)
   api/feedback.routes.ts
-  api/app.ts                    buildApp(deps)
+  api/app.ts                    buildApp(deps); serves UI_DIST_PATH at / when the folder exists
   server.ts                     wiring, startup recovery, listen
 drizzle/                        generated migrations (committed)
+web/                            UI npm workspace (Vite + React): own package.json, tsconfig, vite.config.ts
+  src/models.ts                 the only file in web/ that imports backend models (schemas, types, paths)
+  src/api.ts                    one fetch function per endpoint, responses parsed with the backend schemas
 test/                           mirrors src/, e.g. test/feedback/feedback.repository.test.ts
 ```
 
@@ -171,7 +177,7 @@ export function processFeedback(feedbackId: string,
 export function recoverPendingAnalyses(repo: FeedbackRepository, queue: AnalysisQueue, logger: Logger): { interruptedCount: number; enqueuedCount: number }; // queue/recovery.ts
 // api/app.ts — Fastify uses the same logger (`loggerInstance`), so request logs and app logs share format and level
 export function buildApp(deps: { repo: FeedbackRepository; enqueue: (id: string) => void;
-                                  maxContentLength: number; logger: Logger }): FastifyInstance;
+                                  maxContentLength: number; logger: Logger; uiDistPath?: string }): FastifyInstance;
 ```
 
 ## State rules (do not break these)
@@ -199,6 +205,7 @@ who knows TypeScript but has never seen this project. When in doubt, choose the 
 - Pass dependencies in as arguments. No module-level singletons except in `server.ts`.
 - Named exports only. Explicit return types on exported functions.
 - Don't add an abstraction (helper, generic, wrapper) that has only one caller unless it makes the caller clearly easier to read.
+- web/ imports backend models only through web/src/models.ts.
 
 **Naming**
 - Names say what the thing *is* in domain terms: `feedbackId`, `rawResponse`, `attemptNumber` — not `data`, `res`, `obj`, `tmp`, `x`.
