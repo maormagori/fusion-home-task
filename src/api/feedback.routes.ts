@@ -3,6 +3,8 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { feedbackDetailSchema, feedbackStatusSchema } from '../domain/types.js';
 import type { FeedbackRepository } from '../feedback/feedback.repository.js';
 import {
+  CONFIG_PATH,
+  configResponseSchema,
   createSubmitFeedbackBodySchema,
   FEEDBACK_PATH,
   FEEDBACK_DETAIL_PATH,
@@ -29,6 +31,12 @@ export const feedbackRoutes: FastifyPluginAsyncZod<FeedbackRoutesOptions> = asyn
   app,
   { repo, enqueue, maxContentLength },
 ) => {
+  app.get(CONFIG_PATH, {
+    schema: {
+      response: { [StatusCodes.OK]: configResponseSchema },
+    },
+  }, async () => ({ maxContentLength }));
+
   app.post(FEEDBACK_PATH, {
     schema: {
       body: createSubmitFeedbackBodySchema(maxContentLength),

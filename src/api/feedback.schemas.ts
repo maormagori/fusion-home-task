@@ -4,6 +4,7 @@ import { feedbackStatusSchema, feedbackViewSchema } from '../domain/types.js';
 export const FEEDBACK_PATH = '/feedback';
 export const FEEDBACK_DETAIL_PATH = `${FEEDBACK_PATH}/:id`;
 export const FEEDBACK_RETRY_PATH = `${FEEDBACK_DETAIL_PATH}/retry`;
+export const CONFIG_PATH = '/config';
 
 export function feedbackDetailUrl(id: string): string {
   return FEEDBACK_DETAIL_PATH.replace(':id', encodeURIComponent(id));
@@ -66,3 +67,8 @@ export const retryConflictResponseSchema = errorResponseSchema.extend({
   status: feedbackStatusSchema,
 });
 export type RetryConflictResponse = z.infer<typeof retryConflictResponseSchema>;
+
+export const configResponseSchema = z.object({
+  maxContentLength: z.number().int(),
+});
+export type ConfigResponse = z.infer<typeof configResponseSchema>;

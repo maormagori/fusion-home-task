@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import fastifyStatic from '@fastify/static';
 import { StatusCodes } from 'http-status-codes';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import {
@@ -8,7 +10,12 @@ import {
 import type { Logger } from '../logger.js';
 import { feedbackRoutes, type FeedbackRoutesOptions } from './feedback.routes.js';
 
-export function buildApp(deps: FeedbackRoutesOptions & { logger: Logger }): FastifyInstance {
+export interface BuildAppOptions extends FeedbackRoutesOptions {
+  logger: Logger;
+  uiDistPath?: string;
+}
+
+export function buildApp(deps: BuildAppOptions): FastifyInstance {
   // Typed as Fastify's base logger so buildApp keeps returning the plain FastifyInstance from the contract.
   const loggerInstance: FastifyBaseLogger = deps.logger;
   const app = Fastify({ loggerInstance });
@@ -23,5 +30,9 @@ export function buildApp(deps: FeedbackRoutesOptions & { logger: Logger }): Fast
   });
 
   app.register(feedbackRoutes, deps);
+  // The UI is optional: API-only runs (tests, CI without a web build) have no built folder to serve.
+  if (deps.uiDistPath && existsSync(deps.uiDistPath)) {
+    app.register(fastifyStatic, { root: deps.uiDistPath });
+  }
   return app;
 }
