@@ -1,6 +1,7 @@
 # T10 — Tradeoff session + review fixes (manager + owner)
 
-**When:** after T9's report is in (T8 may still be running).
+**When:** only after the full working version is merged (UI, packages/shared, wide e2e coverage, review fixes).
+Owner and manager go through the tradeoffs one at a time.
 
 ## Steps
 1. Manager prepares `docs/TRADEOFFS.md`: one short entry per tradeoff taken (what we chose, alternatives, cost,
