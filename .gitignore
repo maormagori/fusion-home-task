@@ -1,1 +1,6 @@
 AI-Assisted-Engineering-Challenge.pdf
+node_modules/
+dist/
+data/
+.env
+.vitest/
